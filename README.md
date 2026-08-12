@@ -44,15 +44,14 @@ project.
 
 ## Connecting a real Firebase project
 
-1. Create a project at [console.firebase.google.com](https://console.firebase.google.com).
-2. Enable **Authentication → Phone** sign-in.
-3. Enable **Firestore** and **Storage**.
-4. Add a Web app to the project and copy its config.
-5. Copy `.env.example` to `.env.local` and fill in the `VITE_FIREBASE_*` values.
-6. Set `VITE_USE_DEMO_OTP=false` once you want real SMS delivery (requires
-   reCAPTCHA verification, which runs automatically via the invisible
+1. Create (or open) a project at [console.firebase.google.com](https://console.firebase.google.com).
+2. Enable **Authentication → Phone** sign-in, plus **Firestore** and **Storage**.
+3. Add a Web app to the project and copy its config.
+4. Copy `.env.example` to `.env.local` and fill in the `VITE_FIREBASE_*` values.
+5. Leave `VITE_USE_DEMO_OTP` unset once you want real SMS delivery (requires
+   the Blaze plan; reCAPTCHA runs automatically via the invisible
    `#recaptcha-container` on the phone entry screen).
-7. Deploy the included security rules:
+6. Deploy the included security rules:
 
    ```bash
    npm install -g firebase-tools
@@ -64,6 +63,12 @@ project.
 `firestore.rules` and `storage.rules` restrict every user to reading/writing
 only their own `users/{uid}` profile document and `verification/{uid}/**`
 files.
+
+## Deploying
+
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for the full Firebase + Vercel setup
+walkthrough, including the gotchas (authorized domains, deploying rules,
+build-time env vars).
 
 ## Project structure
 
