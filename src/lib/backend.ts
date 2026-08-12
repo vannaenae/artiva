@@ -7,7 +7,7 @@ import {
   updateDoc,
 } from 'firebase/firestore'
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
-import { db, storage } from '@/lib/firebase'
+import { db, isFirebaseConfigured, storage } from '@/lib/firebase'
 import {
   defaultVerificationSteps,
   type UserProfile,
@@ -17,6 +17,8 @@ import {
 const DEMO_UID_KEY = 'artiva_demo_uid'
 const DEMO_SESSION_KEY = 'artiva_demo_signed_in'
 const DEMO_PROFILE_KEY = (uid: string) => `artiva_demo_profile_${uid}`
+const STORAGE_FALLBACK_KEY = 'artiva_storage_fallback_active'
+const STORAGE_FALLBACK_EVENT = 'artiva-storage-fallback'
 
 /**
  * Reads the current demo "session" without creating one — mirrors Firebase
@@ -120,20 +122,75 @@ export async function updateRole(uid: string, role: UserRole) {
   return updateProfile(uid, { role })
 }
 
-/** Uploads a verification document/photo, returning a viewable URL. */
+/**
+ * True once an upload has fallen back to local storage because Firebase
+ * Storage is configured (or configured-adjacent) but not actually usable —
+ * e.g. the project is still on the Spark plan and never provisioned a
+ * bucket. Sticky for the browser session so the banner stays visible.
+ */
+export function isStorageFallbackActive(): boolean {
+  return sessionStorage.getItem(STORAGE_FALLBACK_KEY) === '1'
+}
+
+function markStorageFallbackActive() {
+  if (sessionStorage.getItem(STORAGE_FALLBACK_KEY) === '1') return
+  sessionStorage.setItem(STORAGE_FALLBACK_KEY, '1')
+  window.dispatchEvent(new Event(STORAGE_FALLBACK_EVENT))
+}
+
+function clearStorageFallbackActive() {
+  if (sessionStorage.getItem(STORAGE_FALLBACK_KEY) !== '1') return
+  sessionStorage.removeItem(STORAGE_FALLBACK_KEY)
+  window.dispatchEvent(new Event(STORAGE_FALLBACK_EVENT))
+}
+
+export function onStorageFallback(callback: () => void): () => void {
+  window.addEventListener(STORAGE_FALLBACK_EVENT, callback)
+  return () => window.removeEventListener(STORAGE_FALLBACK_EVENT, callback)
+}
+
+async function persistAsLocalDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+/**
+ * Uploads a verification document/photo, returning a viewable URL.
+ *
+ * When Firebase Storage is unavailable — either never configured, or
+ * configured but not actually provisioned (e.g. Storage requires the Blaze
+ * plan and the project is still on Spark) — this transparently falls back
+ * to a local data URL so the verification flow stays fully demoable. The
+ * fallback is never silent: `isStorageFallbackActive`/`onStorageFallback`
+ * let the UI surface a visible "not saved to the cloud" banner whenever it
+ * kicks in on an otherwise-real Firebase project.
+ */
 export async function uploadVerificationFile(uid: string, field: string, file: File): Promise<string> {
-  if (!storage) {
-    // Demo fallback: persist as a data URL so it survives reloads.
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
+  if (storage) {
+    try {
+      const path = `verification/${uid}/${field}-${Date.now()}-${file.name}`
+      const storageRef = ref(storage, path)
+      await uploadBytes(storageRef, file)
+      const url = await getDownloadURL(storageRef)
+      clearStorageFallbackActive()
+      return url
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[Artiva] Firebase Storage upload failed — falling back to local demo storage. ' +
+          'Is Storage actually provisioned for this project (requires the Blaze plan)?',
+        err,
+      )
+      if (isFirebaseConfigured) markStorageFallbackActive()
+    }
+  } else if (isFirebaseConfigured) {
+    // Auth/Firestore are real, but Storage was never set up for this project.
+    markStorageFallbackActive()
   }
 
-  const path = `verification/${uid}/${field}-${Date.now()}-${file.name}`
-  const storageRef = ref(storage, path)
-  await uploadBytes(storageRef, file)
-  return getDownloadURL(storageRef)
+  return persistAsLocalDataUrl(file)
 }
