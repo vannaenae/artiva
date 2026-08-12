@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Artiva brand palette, extracted from Figma (Verifix — Verification Screens) */
+  --color-navy: #151b29;
+  --color-brand: #ff8c00;
+  --color-brand-dark: #904d00;
+  --color-brand-darker: #623200;
+  --color-brand-soft: #ffdcc3;
+
+  --color-app-bg: #f8f9fa;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f3f4f5;
+  --color-chip: #edeeef;
+  --color-chip-blue: #dadff3;
+
+  --color-border: #e1e3e4;
+  --color-border-warm: #ddc1ae;
+
+  --color-text-primary: #191c1d;
+  --color-text-secondary: #564334;
+  --color-text-muted: #585e6f;
+
+  --color-success: #10b981;
+  --color-success-soft: rgba(16, 185, 129, 0.1);
+  --color-danger: #dc2626;
+  --color-danger-soft: rgba(220, 38, 38, 0.1);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--color-app-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer utilities {
+  /* Mobile app shell: centers the 390px design frame on larger viewports. */
+  .app-shell {
+    max-width: 480px;
+    margin-inline: auto;
+    min-height: 100dvh;
+    background-color: var(--color-app-bg);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
