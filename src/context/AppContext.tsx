@@ -21,6 +21,8 @@ import {
   createDemoSession,
   ensureProfile,
   getDemoSessionUid,
+  isStorageFallbackActive,
+  onStorageFallback,
   subscribeToProfile,
   updateProfile as saveProfilePartial,
   uploadVerificationFile,
@@ -37,6 +39,8 @@ interface AppContextValue {
   profile: UserProfile | null
   authLoading: boolean
   isDemoOtpMode: boolean
+  /** True once an upload has silently fallen back to local storage this session. */
+  storageFallbackActive: boolean
   sendOtp: (fullPhoneNumber: string) => Promise<void>
   confirmOtp: (code: string) => Promise<void>
   logout: () => Promise<void>
@@ -50,6 +54,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [storageFallbackActive, setStorageFallbackActive] = useState(isStorageFallbackActive)
   const confirmationRef = useRef<ConfirmationResult | null>(null)
   const pendingPhoneRef = useRef<string | null>(null)
   const recaptchaRef = useRef<RecaptchaVerifier | null>(null)
@@ -70,6 +75,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })
     return unsub
   }, [])
+
+  // Pick up the "uploads fell back to local storage" flag whenever it flips —
+  // it can also clear mid-session if a later upload succeeds for real.
+  useEffect(() => onStorageFallback(() => setStorageFallbackActive(isStorageFallbackActive())), [])
 
   // Subscribe to the user's profile document whenever the uid changes.
   useEffect(() => {
@@ -155,13 +164,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       profile,
       authLoading,
       isDemoOtpMode: isDemoOtpMode || !auth,
+      storageFallbackActive,
       sendOtp,
       confirmOtp,
       logout,
       updateProfile,
       uploadFile,
     }),
-    [user, profile, authLoading, sendOtp, confirmOtp, logout, updateProfile, uploadFile],
+    [
+      user,
+      profile,
+      authLoading,
+      storageFallbackActive,
+      sendOtp,
+      confirmOtp,
+      logout,
+      updateProfile,
+      uploadFile,
+    ],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

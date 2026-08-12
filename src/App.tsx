@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppProvider } from '@/context/AppContext'
+import { StorageFallbackBanner } from '@/components/ui/StorageFallbackBanner'
 
 const SplashScreen = lazy(() => import('@/screens/SplashScreen').then((m) => ({ default: m.SplashScreen })))
 const PhoneEntryScreen = lazy(() => import('@/screens/auth/PhoneEntryScreen').then((m) => ({ default: m.PhoneEntryScreen })))
@@ -35,6 +36,7 @@ function RouteFallback() {
 function App() {
   return (
     <AppProvider>
+      <StorageFallbackBanner />
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route path="/" element={<SplashScreen />} />
