@@ -3,6 +3,15 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { AuthStackParamList, RouteName } from './types';
 import SplashScreen from '../screens/auth/SplashScreen';
 import PhoneEntryScreen from '../screens/auth/PhoneEntryScreen';
+import OtpVerifyScreen from '../screens/auth/OtpVerifyScreen';
+import RoleSelectionScreen from '../screens/auth/RoleSelectionScreen';
+import ResultVerifiedScreen from '../screens/verification/ResultVerifiedScreen';
+import ResultRejectedScreen from '../screens/verification/ResultRejectedScreen';
+import PendingStatusScreen from '../screens/verification/PendingStatusScreen';
+import UploadFailedScreen from '../screens/verification/UploadFailedScreen';
+import PermissionDeniedScreen from '../screens/verification/PermissionDeniedScreen';
+import DocumentUnreadableScreen from '../screens/verification/DocumentUnreadableScreen';
+import NotificationPermissionPromptScreen from '../screens/verification/NotificationPermissionPromptScreen';
 import PlaceholderScreen from '../screens/shared/PlaceholderScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -10,9 +19,7 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 /** Human-readable titles for routes still on the placeholder screen. */
 const placeholderTitles: Partial<Record<RouteName, string>> = {
   PhoneEntryNigeria: 'Phone Entry (Nigeria)',
-  OtpVerify: 'Verify OTP',
   OtpVerifyNigeria: 'Verify OTP (Nigeria)',
-  RoleSelection: 'Choose Your Role',
   TermsConsent: 'Terms & Privacy',
   VerificationIntro: "Let's get you verified",
   VerificationChecklist: 'Verification Checklist',
@@ -23,13 +30,6 @@ const placeholderTitles: Partial<Record<RouteName, string>> = {
   TradeCertificate: 'Trade Certification',
   ProofOfAddress: 'Proof of Address',
   BackgroundCheckConsent: 'Background Check Consent',
-  ResultVerified: "You're Verified",
-  ResultRejected: 'Verification Failed',
-  PendingStatus: 'Verification In Progress',
-  PermissionDenied: 'Camera Permission Required',
-  UploadFailed: 'Upload Failed',
-  DocumentUnreadable: 'Document Unreadable',
-  NotificationPermissionPrompt: 'Stay Updated',
   SwitchRole: 'Switch Role',
   ProviderProfileVerified: 'Your Profile',
   ProviderCategorySelection: 'What services do you offer?',
@@ -52,6 +52,18 @@ export default function RootNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="PhoneEntry" component={PhoneEntryScreen} />
+      <Stack.Screen name="OtpVerify" component={OtpVerifyScreen} />
+      <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
+      <Stack.Screen name="ResultVerified" component={ResultVerifiedScreen} />
+      <Stack.Screen name="ResultRejected" component={ResultRejectedScreen} />
+      <Stack.Screen name="PendingStatus" component={PendingStatusScreen} />
+      <Stack.Screen name="UploadFailed" component={UploadFailedScreen} />
+      <Stack.Screen name="PermissionDenied" component={PermissionDeniedScreen} />
+      <Stack.Screen name="DocumentUnreadable" component={DocumentUnreadableScreen} />
+      <Stack.Screen
+        name="NotificationPermissionPrompt"
+        component={NotificationPermissionPromptScreen}
+      />
       {(Object.keys(placeholderTitles) as RouteName[]).map((name) => (
         <Stack.Screen key={name} name={name}>
           {(props) => <PlaceholderScreen {...props} title={placeholderTitles[name]!} />}
