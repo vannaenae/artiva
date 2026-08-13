@@ -8,11 +8,22 @@ import { colors, typography, spacing, radius } from '../../theme/tokens';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../../navigation/types';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'ProviderPricingSetup'>;
+type Props = NativeStackScreenProps<
+  AuthStackParamList,
+  'ProviderPricingSetup' | 'ProviderPricingSetupNGN'
+> & {
+  currency?: 'USD' | 'NGN';
+};
 
-export default function ProviderPricingSetupScreen({ navigation }: Props) {
+const currencyMeta = {
+  USD: { symbol: '$', label: 'USD - US Dollar' },
+  NGN: { symbol: '₦', label: 'NGN - Nigerian Naira' },
+};
+
+export default function ProviderPricingSetupScreen({ navigation, currency = 'USD' }: Props) {
   const [model, setModel] = useState<'hourly' | 'flat'>('hourly');
   const [rate, setRate] = useState('');
+  const { symbol, label } = currencyMeta[currency];
 
   return (
     <ScreenContainer scroll>
@@ -28,7 +39,7 @@ export default function ProviderPricingSetupScreen({ navigation }: Props) {
           <View style={styles.field}>
             <Text style={styles.label}>Default Currency</Text>
             <View style={styles.select}>
-              <Text style={styles.selectText}>🇺🇸  USD - US Dollar</Text>
+              <Text style={styles.selectText}>{currency === 'NGN' ? '🇳🇬' : '🇺🇸'}  {label}</Text>
               <Feather name="chevron-down" size={14} color={colors.textOnLightSecondary} />
             </View>
           </View>
@@ -55,7 +66,7 @@ export default function ProviderPricingSetupScreen({ navigation }: Props) {
           <View style={styles.field}>
             <Text style={styles.label}>Base Hourly Rate</Text>
             <View style={styles.select}>
-              <Text style={styles.currencyPrefix}>$</Text>
+              <Text style={styles.currencyPrefix}>{symbol}</Text>
               <TextInput
                 style={styles.rateInput}
                 value={rate}

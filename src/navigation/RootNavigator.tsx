@@ -29,6 +29,9 @@ import ProviderPricingSetupScreen from '../screens/provider/ProviderPricingSetup
 import ProviderAvailabilitySetupScreen from '../screens/provider/ProviderAvailabilitySetupScreen';
 import ProviderPortfolioUploadScreen from '../screens/provider/ProviderPortfolioUploadScreen';
 import ProviderBusinessBioScreen from '../screens/provider/ProviderBusinessBioScreen';
+import ProviderStatusToggleScreen from '../screens/provider/ProviderStatusToggleScreen';
+import ProviderPricingSetupNGNScreen from '../screens/provider/ProviderPricingSetupNGNScreen';
+import ProviderEarningsPayoutsNGNScreen from '../screens/provider/ProviderEarningsPayoutsNGNScreen';
 import PlaceholderScreen from '../screens/shared/PlaceholderScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -37,8 +40,6 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 const placeholderTitles: Partial<Record<RouteName, string>> = {
   PhoneEntryNigeria: 'Phone Entry (Nigeria)',
   OtpVerifyNigeria: 'Verify OTP (Nigeria)',
-  ProviderPricingSetupNGN: 'Rates & Pricing',
-  ProviderStatusToggle: 'Currently Online',
   ProviderEarningsPayoutsNGN: 'Earnings & Payouts',
   CustomerHome: 'Find Services',
   CustomerSearchFilters: 'Search & Filters',
@@ -81,6 +82,12 @@ export default function RootNavigator() {
       <Stack.Screen name="ProviderAvailabilitySetup" component={ProviderAvailabilitySetupScreen} />
       <Stack.Screen name="ProviderPortfolioUpload" component={ProviderPortfolioUploadScreen} />
       <Stack.Screen name="ProviderBusinessBio" component={ProviderBusinessBioScreen} />
+      <Stack.Screen name="ProviderStatusToggle" component={ProviderStatusToggleScreen} />
+      <Stack.Screen name="ProviderPricingSetupNGN" component={ProviderPricingSetupNGNScreen} />
+      <Stack.Screen
+        name="ProviderEarningsPayoutsNGN"
+        component={ProviderEarningsPayoutsNGNScreen}
+      />
       {(Object.keys(placeholderTitles) as RouteName[]).map((name) => (
         <Stack.Screen key={name} name={name}>
           {(props) => <PlaceholderScreen {...props} title={placeholderTitles[name]!} />}
