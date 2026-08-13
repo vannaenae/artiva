@@ -5,11 +5,11 @@ import ScreenContainer from '../../components/ScreenContainer';
 import TopAppBar from '../../components/TopAppBar';
 import Button from '../../components/Button';
 import { colors, typography, spacing, radius } from '../../theme/tokens';
+import { useRole, type Role } from '../../context/RoleContext';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'RoleSelection'>;
-type Role = 'customer' | 'provider';
 
 const roles: {
   key: Role;
@@ -33,6 +33,7 @@ const roles: {
 
 export default function RoleSelectionScreen({ navigation }: Props) {
   const [selected, setSelected] = useState<Role | null>(null);
+  const { setRole } = useRole();
 
   return (
     <ScreenContainer>
@@ -73,7 +74,10 @@ export default function RoleSelectionScreen({ navigation }: Props) {
             label="Continue"
             icon="arrow-right"
             disabled={!selected}
-            onPress={() => navigation.navigate('TermsConsent')}
+            onPress={() => {
+              if (selected) setRole(selected);
+              navigation.navigate('TermsConsent');
+            }}
           />
           <View style={styles.loginRow}>
             <Text style={styles.loginLabel}>Already have an account? </Text>

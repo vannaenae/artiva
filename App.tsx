@@ -11,6 +11,7 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import RootNavigator from './src/navigation/RootNavigator';
+import { RoleProvider } from './src/context/RoleContext';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -25,9 +26,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
+      <RoleProvider>
+        <NavigationContainer>
+          <RootNavigator />
+        </NavigationContainer>
+      </RoleProvider>
     </SafeAreaProvider>
   );
 }

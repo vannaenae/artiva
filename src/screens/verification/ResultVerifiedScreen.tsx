@@ -1,11 +1,14 @@
 import React from 'react';
 import StatusScreen from '../../components/StatusScreen';
+import { useRole } from '../../context/RoleContext';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ResultVerified'>;
 
 export default function ResultVerifiedScreen({ navigation }: Props) {
+  const { role } = useRole();
+
   return (
     <StatusScreen
       icon="check-circle"
@@ -14,7 +17,9 @@ export default function ResultVerifiedScreen({ navigation }: Props) {
       title="You're Verified!"
       body="Your profile is now live. You can start offering your services to clients immediately."
       primaryLabel="Start Exploring"
-      onPrimary={() => navigation.navigate('CustomerHome')}
+      onPrimary={() =>
+        navigation.navigate(role === 'provider' ? 'ProviderCategorySelection' : 'CustomerHome')
+      }
     />
   );
 }

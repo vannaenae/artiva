@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { colors, typography } from '../theme/tokens';
 
@@ -9,9 +10,17 @@ type Props = {
   right?: React.ReactNode;
 };
 
+/**
+ * The navy bar is meant to run flush behind the status bar (ScreenContainer
+ * doesn't reserve the top safe area for header screens), so this component
+ * absorbs the top inset itself rather than letting content sit under the
+ * notch/status bar.
+ */
 export default function TopAppBar({ title = 'Artiva', onBack, right }: Props) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.bar}>
+    <View style={[styles.bar, { paddingTop: insets.top, height: 64 + insets.top }]}>
       <View style={styles.side}>
         {onBack ? (
           <TouchableOpacity onPress={onBack} style={styles.iconButton} hitSlop={8}>
@@ -29,7 +38,6 @@ export default function TopAppBar({ title = 'Artiva', onBack, right }: Props) {
 
 const styles = StyleSheet.create({
   bar: {
-    height: 64,
     backgroundColor: colors.navy,
     flexDirection: 'row',
     alignItems: 'center',
