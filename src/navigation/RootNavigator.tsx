@@ -22,6 +22,13 @@ import SelfiePreviewScreen from '../screens/verification/SelfiePreviewScreen';
 import TradeCertificateScreen from '../screens/verification/TradeCertificateScreen';
 import ProofOfAddressScreen from '../screens/verification/ProofOfAddressScreen';
 import BackgroundCheckConsentScreen from '../screens/verification/BackgroundCheckConsentScreen';
+import SwitchRoleScreen from '../screens/provider/SwitchRoleScreen';
+import ProviderProfileVerifiedScreen from '../screens/provider/ProviderProfileVerifiedScreen';
+import ProviderCategorySelectionScreen from '../screens/provider/ProviderCategorySelectionScreen';
+import ProviderPricingSetupScreen from '../screens/provider/ProviderPricingSetupScreen';
+import ProviderAvailabilitySetupScreen from '../screens/provider/ProviderAvailabilitySetupScreen';
+import ProviderPortfolioUploadScreen from '../screens/provider/ProviderPortfolioUploadScreen';
+import ProviderBusinessBioScreen from '../screens/provider/ProviderBusinessBioScreen';
 import PlaceholderScreen from '../screens/shared/PlaceholderScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -30,14 +37,7 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 const placeholderTitles: Partial<Record<RouteName, string>> = {
   PhoneEntryNigeria: 'Phone Entry (Nigeria)',
   OtpVerifyNigeria: 'Verify OTP (Nigeria)',
-  SwitchRole: 'Switch Role',
-  ProviderProfileVerified: 'Your Profile',
-  ProviderCategorySelection: 'What services do you offer?',
-  ProviderPricingSetup: 'Rates & Pricing',
   ProviderPricingSetupNGN: 'Rates & Pricing',
-  ProviderAvailabilitySetup: 'Availability Setup',
-  ProviderPortfolioUpload: 'Showcase Your Work',
-  ProviderBusinessBio: 'Tell Customers About Yourself',
   ProviderStatusToggle: 'Currently Online',
   ProviderEarningsPayoutsNGN: 'Earnings & Payouts',
   CustomerHome: 'Find Services',
@@ -74,6 +74,13 @@ export default function RootNavigator() {
       <Stack.Screen name="TradeCertificate" component={TradeCertificateScreen} />
       <Stack.Screen name="ProofOfAddress" component={ProofOfAddressScreen} />
       <Stack.Screen name="BackgroundCheckConsent" component={BackgroundCheckConsentScreen} />
+      <Stack.Screen name="SwitchRole" component={SwitchRoleScreen} />
+      <Stack.Screen name="ProviderProfileVerified" component={ProviderProfileVerifiedScreen} />
+      <Stack.Screen name="ProviderCategorySelection" component={ProviderCategorySelectionScreen} />
+      <Stack.Screen name="ProviderPricingSetup" component={ProviderPricingSetupScreen} />
+      <Stack.Screen name="ProviderAvailabilitySetup" component={ProviderAvailabilitySetupScreen} />
+      <Stack.Screen name="ProviderPortfolioUpload" component={ProviderPortfolioUploadScreen} />
+      <Stack.Screen name="ProviderBusinessBio" component={ProviderBusinessBioScreen} />
       {(Object.keys(placeholderTitles) as RouteName[]).map((name) => (
         <Stack.Screen key={name} name={name}>
           {(props) => <PlaceholderScreen {...props} title={placeholderTitles[name]!} />}
