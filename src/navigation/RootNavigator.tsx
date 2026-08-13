@@ -32,6 +32,11 @@ import ProviderBusinessBioScreen from '../screens/provider/ProviderBusinessBioSc
 import ProviderStatusToggleScreen from '../screens/provider/ProviderStatusToggleScreen';
 import ProviderPricingSetupNGNScreen from '../screens/provider/ProviderPricingSetupNGNScreen';
 import ProviderEarningsPayoutsNGNScreen from '../screens/provider/ProviderEarningsPayoutsNGNScreen';
+import CustomerHomeScreen from '../screens/customer/CustomerHomeScreen';
+import CustomerSearchFiltersScreen from '../screens/customer/CustomerSearchFiltersScreen';
+import CustomerBookingFormNGNScreen from '../screens/customer/CustomerBookingFormNGNScreen';
+import CustomerEscrowPaymentSummaryNGNScreen from '../screens/customer/CustomerEscrowPaymentSummaryNGNScreen';
+import CustomerProviderProfileNigeriaScreen from '../screens/customer/CustomerProviderProfileNigeriaScreen';
 import PlaceholderScreen from '../screens/shared/PlaceholderScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -40,12 +45,6 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 const placeholderTitles: Partial<Record<RouteName, string>> = {
   PhoneEntryNigeria: 'Phone Entry (Nigeria)',
   OtpVerifyNigeria: 'Verify OTP (Nigeria)',
-  ProviderEarningsPayoutsNGN: 'Earnings & Payouts',
-  CustomerHome: 'Find Services',
-  CustomerSearchFilters: 'Search & Filters',
-  CustomerProviderProfileNigeria: 'Provider Profile',
-  CustomerBookingFormNGN: 'Book a Service',
-  CustomerEscrowPaymentSummaryNGN: 'Payment Summary',
 };
 
 export default function RootNavigator() {
@@ -87,6 +86,17 @@ export default function RootNavigator() {
       <Stack.Screen
         name="ProviderEarningsPayoutsNGN"
         component={ProviderEarningsPayoutsNGNScreen}
+      />
+      <Stack.Screen name="CustomerHome" component={CustomerHomeScreen} />
+      <Stack.Screen name="CustomerSearchFilters" component={CustomerSearchFiltersScreen} />
+      <Stack.Screen name="CustomerBookingFormNGN" component={CustomerBookingFormNGNScreen} />
+      <Stack.Screen
+        name="CustomerEscrowPaymentSummaryNGN"
+        component={CustomerEscrowPaymentSummaryNGNScreen}
+      />
+      <Stack.Screen
+        name="CustomerProviderProfileNigeria"
+        component={CustomerProviderProfileNigeriaScreen}
       />
       {(Object.keys(placeholderTitles) as RouteName[]).map((name) => (
         <Stack.Screen key={name} name={name}>
