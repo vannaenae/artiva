@@ -1,6 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { AuthStackParamList, RouteName } from './types';
+import type { AuthStackParamList } from './types';
 import SplashScreen from '../screens/auth/SplashScreen';
 import PhoneEntryScreen from '../screens/auth/PhoneEntryScreen';
 import OtpVerifyScreen from '../screens/auth/OtpVerifyScreen';
@@ -37,15 +37,10 @@ import CustomerSearchFiltersScreen from '../screens/customer/CustomerSearchFilte
 import CustomerBookingFormNGNScreen from '../screens/customer/CustomerBookingFormNGNScreen';
 import CustomerEscrowPaymentSummaryNGNScreen from '../screens/customer/CustomerEscrowPaymentSummaryNGNScreen';
 import CustomerProviderProfileNigeriaScreen from '../screens/customer/CustomerProviderProfileNigeriaScreen';
-import PlaceholderScreen from '../screens/shared/PlaceholderScreen';
+import PhoneEntryNigeriaScreen from '../screens/auth/PhoneEntryNigeriaScreen';
+import OtpVerifyNigeriaScreen from '../screens/auth/OtpVerifyNigeriaScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
-
-/** Human-readable titles for routes still on the placeholder screen. */
-const placeholderTitles: Partial<Record<RouteName, string>> = {
-  PhoneEntryNigeria: 'Phone Entry (Nigeria)',
-  OtpVerifyNigeria: 'Verify OTP (Nigeria)',
-};
 
 export default function RootNavigator() {
   return (
@@ -98,11 +93,8 @@ export default function RootNavigator() {
         name="CustomerProviderProfileNigeria"
         component={CustomerProviderProfileNigeriaScreen}
       />
-      {(Object.keys(placeholderTitles) as RouteName[]).map((name) => (
-        <Stack.Screen key={name} name={name}>
-          {(props) => <PlaceholderScreen {...props} title={placeholderTitles[name]!} />}
-        </Stack.Screen>
-      ))}
+      <Stack.Screen name="PhoneEntryNigeria" component={PhoneEntryNigeriaScreen} />
+      <Stack.Screen name="OtpVerifyNigeria" component={OtpVerifyNigeriaScreen} />
     </Stack.Navigator>
   );
 }

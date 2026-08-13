@@ -9,9 +9,18 @@ import { colors, typography, spacing, radius } from '../../theme/tokens';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../../navigation/types';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'PhoneEntry'>;
+type Props = NativeStackScreenProps<AuthStackParamList, 'PhoneEntry' | 'PhoneEntryNigeria'> & {
+  countryCode?: string;
+  placeholder?: string;
+  otpRoute?: 'OtpVerify' | 'OtpVerifyNigeria';
+};
 
-export default function PhoneEntryScreen({ navigation }: Props) {
+export default function PhoneEntryScreen({
+  navigation,
+  countryCode = '+1',
+  placeholder = '(555) 000-0000',
+  otpRoute = 'OtpVerify',
+}: Props) {
   const [phone, setPhone] = useState('');
 
   return (
@@ -30,12 +39,12 @@ export default function PhoneEntryScreen({ navigation }: Props) {
             <View style={styles.inputRow}>
               <View style={styles.countryCode}>
                 <Feather name="chevron-down" size={12} color={colors.textOnLightSecondary} />
-                <Text style={styles.countryCodeText}>+1</Text>
+                <Text style={styles.countryCodeText}>{countryCode}</Text>
               </View>
               <View style={styles.divider} />
               <TextInput
                 style={styles.input}
-                placeholder="(555) 000-0000"
+                placeholder={placeholder}
                 placeholderTextColor={colors.placeholderOnLight}
                 keyboardType="phone-pad"
                 value={phone}
@@ -46,7 +55,7 @@ export default function PhoneEntryScreen({ navigation }: Props) {
             <Button
               label="Send OTP"
               icon="arrow-right"
-              onPress={() => navigation.navigate('OtpVerify')}
+              onPress={() => navigation.navigate(otpRoute)}
             />
           </View>
         </Card>

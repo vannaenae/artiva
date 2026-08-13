@@ -8,11 +8,13 @@ import { colors, typography, spacing } from '../../theme/tokens';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../../navigation/types';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'OtpVerify'>;
+type Props = NativeStackScreenProps<AuthStackParamList, 'OtpVerify' | 'OtpVerifyNigeria'> & {
+  phone?: string;
+};
 
 const OTP_LENGTH = 6;
 
-export default function OtpVerifyScreen({ navigation }: Props) {
+export default function OtpVerifyScreen({ navigation, phone = '+1 (555) 019-2834' }: Props) {
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const inputs = useRef<Array<TextInput | null>>([]);
 
@@ -34,7 +36,7 @@ export default function OtpVerifyScreen({ navigation }: Props) {
         <Text style={styles.heading}>Check your phone</Text>
         <View style={styles.subheadingBlock}>
           <Text style={styles.subheading}>Enter 6-digit code sent to</Text>
-          <Text style={styles.phone}>+1 (555) 019-2834</Text>
+          <Text style={styles.phone}>{phone}</Text>
         </View>
 
         <View style={styles.otpRow}>
