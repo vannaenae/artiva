@@ -1,10 +1,20 @@
 # Artiva
 
-Artiva is a two-sided services marketplace ("hire" vs. "provide"). This app
-implements the **onboarding + identity verification flow** ("Verifix") from
-the [Figma file](https://www.figma.com/design/vK27oIGb5Cteo40AT6Nbxk/Verifix-%E2%80%94-Verification-Screens),
-page 5, built with **React + TypeScript + Vite**, styled with **Tailwind CSS**,
-and backed by **Firebase** (Phone Auth, Firestore, Storage).
+Artiva is a two-sided services marketplace ("hire" vs. "provide"), built from
+the same [Figma file](https://www.figma.com/design/vK27oIGb5Cteo40AT6Nbxk/Verifix-%E2%80%94-Verification-Screens)
+("Verifix — Verification Screens") as two separate apps that live side by
+side in this repo:
+
+- **This directory (repo root)** — the **web app**. React + TypeScript +
+  Vite, styled with Tailwind CSS, backed by Firebase (Phone Auth, Firestore,
+  Storage). Covers the onboarding + identity verification flow.
+- **[`mobile/`](./mobile)** — the **mobile app**. Expo (React Native +
+  TypeScript) with React Navigation. Covers the full 40-screen flow: auth,
+  verification/KYC, provider setup, and the customer booking/payment
+  screens.
+
+The rest of this README covers the web app; see `mobile/` for the mobile
+app's own setup instructions.
 
 ## Flow implemented
 

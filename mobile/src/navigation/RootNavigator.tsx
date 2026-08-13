@@ -1,0 +1,100 @@
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import type { AuthStackParamList } from './types';
+import SplashScreen from '../screens/auth/SplashScreen';
+import PhoneEntryScreen from '../screens/auth/PhoneEntryScreen';
+import OtpVerifyScreen from '../screens/auth/OtpVerifyScreen';
+import RoleSelectionScreen from '../screens/auth/RoleSelectionScreen';
+import ResultVerifiedScreen from '../screens/verification/ResultVerifiedScreen';
+import ResultRejectedScreen from '../screens/verification/ResultRejectedScreen';
+import PendingStatusScreen from '../screens/verification/PendingStatusScreen';
+import UploadFailedScreen from '../screens/verification/UploadFailedScreen';
+import PermissionDeniedScreen from '../screens/verification/PermissionDeniedScreen';
+import DocumentUnreadableScreen from '../screens/verification/DocumentUnreadableScreen';
+import NotificationPermissionPromptScreen from '../screens/verification/NotificationPermissionPromptScreen';
+import TermsConsentScreen from '../screens/auth/TermsConsentScreen';
+import VerificationIntroScreen from '../screens/verification/VerificationIntroScreen';
+import VerificationChecklistScreen from '../screens/verification/VerificationChecklistScreen';
+import IdUploadEmptyScreen from '../screens/verification/IdUploadEmptyScreen';
+import IdUploadSelectedScreen from '../screens/verification/IdUploadSelectedScreen';
+import SelfieCaptureScreen from '../screens/verification/SelfieCaptureScreen';
+import SelfiePreviewScreen from '../screens/verification/SelfiePreviewScreen';
+import TradeCertificateScreen from '../screens/verification/TradeCertificateScreen';
+import ProofOfAddressScreen from '../screens/verification/ProofOfAddressScreen';
+import BackgroundCheckConsentScreen from '../screens/verification/BackgroundCheckConsentScreen';
+import SwitchRoleScreen from '../screens/provider/SwitchRoleScreen';
+import ProviderProfileVerifiedScreen from '../screens/provider/ProviderProfileVerifiedScreen';
+import ProviderCategorySelectionScreen from '../screens/provider/ProviderCategorySelectionScreen';
+import ProviderPricingSetupScreen from '../screens/provider/ProviderPricingSetupScreen';
+import ProviderAvailabilitySetupScreen from '../screens/provider/ProviderAvailabilitySetupScreen';
+import ProviderPortfolioUploadScreen from '../screens/provider/ProviderPortfolioUploadScreen';
+import ProviderBusinessBioScreen from '../screens/provider/ProviderBusinessBioScreen';
+import ProviderStatusToggleScreen from '../screens/provider/ProviderStatusToggleScreen';
+import ProviderPricingSetupNGNScreen from '../screens/provider/ProviderPricingSetupNGNScreen';
+import ProviderEarningsPayoutsNGNScreen from '../screens/provider/ProviderEarningsPayoutsNGNScreen';
+import CustomerHomeScreen from '../screens/customer/CustomerHomeScreen';
+import CustomerSearchFiltersScreen from '../screens/customer/CustomerSearchFiltersScreen';
+import CustomerBookingFormNGNScreen from '../screens/customer/CustomerBookingFormNGNScreen';
+import CustomerEscrowPaymentSummaryNGNScreen from '../screens/customer/CustomerEscrowPaymentSummaryNGNScreen';
+import CustomerProviderProfileNigeriaScreen from '../screens/customer/CustomerProviderProfileNigeriaScreen';
+import PhoneEntryNigeriaScreen from '../screens/auth/PhoneEntryNigeriaScreen';
+import OtpVerifyNigeriaScreen from '../screens/auth/OtpVerifyNigeriaScreen';
+
+const Stack = createNativeStackNavigator<AuthStackParamList>();
+
+export default function RootNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Splash" component={SplashScreen} />
+      <Stack.Screen name="PhoneEntry" component={PhoneEntryScreen} />
+      <Stack.Screen name="OtpVerify" component={OtpVerifyScreen} />
+      <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
+      <Stack.Screen name="ResultVerified" component={ResultVerifiedScreen} />
+      <Stack.Screen name="ResultRejected" component={ResultRejectedScreen} />
+      <Stack.Screen name="PendingStatus" component={PendingStatusScreen} />
+      <Stack.Screen name="UploadFailed" component={UploadFailedScreen} />
+      <Stack.Screen name="PermissionDenied" component={PermissionDeniedScreen} />
+      <Stack.Screen name="DocumentUnreadable" component={DocumentUnreadableScreen} />
+      <Stack.Screen
+        name="NotificationPermissionPrompt"
+        component={NotificationPermissionPromptScreen}
+      />
+      <Stack.Screen name="TermsConsent" component={TermsConsentScreen} />
+      <Stack.Screen name="VerificationIntro" component={VerificationIntroScreen} />
+      <Stack.Screen name="VerificationChecklist" component={VerificationChecklistScreen} />
+      <Stack.Screen name="IdUploadEmpty" component={IdUploadEmptyScreen} />
+      <Stack.Screen name="IdUploadSelected" component={IdUploadSelectedScreen} />
+      <Stack.Screen name="SelfieCapture" component={SelfieCaptureScreen} />
+      <Stack.Screen name="SelfiePreview" component={SelfiePreviewScreen} />
+      <Stack.Screen name="TradeCertificate" component={TradeCertificateScreen} />
+      <Stack.Screen name="ProofOfAddress" component={ProofOfAddressScreen} />
+      <Stack.Screen name="BackgroundCheckConsent" component={BackgroundCheckConsentScreen} />
+      <Stack.Screen name="SwitchRole" component={SwitchRoleScreen} />
+      <Stack.Screen name="ProviderProfileVerified" component={ProviderProfileVerifiedScreen} />
+      <Stack.Screen name="ProviderCategorySelection" component={ProviderCategorySelectionScreen} />
+      <Stack.Screen name="ProviderPricingSetup" component={ProviderPricingSetupScreen} />
+      <Stack.Screen name="ProviderAvailabilitySetup" component={ProviderAvailabilitySetupScreen} />
+      <Stack.Screen name="ProviderPortfolioUpload" component={ProviderPortfolioUploadScreen} />
+      <Stack.Screen name="ProviderBusinessBio" component={ProviderBusinessBioScreen} />
+      <Stack.Screen name="ProviderStatusToggle" component={ProviderStatusToggleScreen} />
+      <Stack.Screen name="ProviderPricingSetupNGN" component={ProviderPricingSetupNGNScreen} />
+      <Stack.Screen
+        name="ProviderEarningsPayoutsNGN"
+        component={ProviderEarningsPayoutsNGNScreen}
+      />
+      <Stack.Screen name="CustomerHome" component={CustomerHomeScreen} />
+      <Stack.Screen name="CustomerSearchFilters" component={CustomerSearchFiltersScreen} />
+      <Stack.Screen name="CustomerBookingFormNGN" component={CustomerBookingFormNGNScreen} />
+      <Stack.Screen
+        name="CustomerEscrowPaymentSummaryNGN"
+        component={CustomerEscrowPaymentSummaryNGNScreen}
+      />
+      <Stack.Screen
+        name="CustomerProviderProfileNigeria"
+        component={CustomerProviderProfileNigeriaScreen}
+      />
+      <Stack.Screen name="PhoneEntryNigeria" component={PhoneEntryNigeriaScreen} />
+      <Stack.Screen name="OtpVerifyNigeria" component={OtpVerifyNigeriaScreen} />
+    </Stack.Navigator>
+  );
+}
