@@ -70,6 +70,14 @@ See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for the full Firebase + Vercel setup
 walkthrough, including the gotchas (authorized domains, deploying rules,
 build-time env vars).
 
+## iOS / TestFlight
+
+The app is also wrapped as a native iOS project via
+[Capacitor](https://capacitorjs.com) (`ios/`). See
+**[TESTFLIGHT.md](./TESTFLIGHT.md)** for the Xcode → App Store Connect →
+TestFlight walkthrough — building and signing the `.ipa` requires a Mac and
+can't be done from this repo alone.
+
 ## Project structure
 
 ```
