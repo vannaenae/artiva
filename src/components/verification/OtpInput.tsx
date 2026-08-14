@@ -49,10 +49,10 @@ export function OtpInput({ length = 6, value, onChange }: OtpInputProps) {
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}
             className={cn(
-              'h-14 w-12 rounded-xl border bg-app-bg text-center text-2xl font-semibold text-text-primary shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] outline-none transition-colors',
+              'h-14 w-12 rounded-xl border bg-white text-center text-2xl font-semibold text-text-primary shadow-card outline-none transition-colors',
               digit || index === value.length
-                ? 'border-brand shadow-[0_0_0_2px_rgba(255,140,0,0.2),0_1px_2px_0_rgba(0,0,0,0.05)]'
-                : 'border-border-warm',
+                ? 'border-brand shadow-[0_0_0_3px_rgba(67,56,202,0.15)]'
+                : 'border-border',
             )}
           />
           {index === 2 ? <span className="h-1 w-2 shrink-0 rounded-full bg-border-warm" /> : null}

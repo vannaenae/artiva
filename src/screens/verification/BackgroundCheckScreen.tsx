@@ -45,7 +45,7 @@ export function BackgroundCheckScreen() {
           </p>
         </div>
 
-        <div className="rounded-xl border border-border bg-white p-[17px] shadow-[0_1px_1px_rgba(0,0,0,0.05)]">
+        <div className="rounded-xl border border-border bg-white p-[17px] shadow-card">
           <ul className="flex flex-col gap-3 text-sm text-text-secondary">
             {POINTS.map((point) => (
               <li key={point} className="flex items-start gap-2">

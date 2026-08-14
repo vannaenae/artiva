@@ -44,7 +44,7 @@ export function PhoneEntryScreen() {
       <div className="flex flex-1 flex-col items-center justify-center px-4 pt-16">
         <form
           onSubmit={handleSubmit}
-          className="flex w-full flex-col gap-6 rounded-xl border border-border bg-white p-6 shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)]"
+          className="flex w-full flex-col gap-6 rounded-xl border border-border bg-white p-6 shadow-raised"
         >
           <div className="flex flex-col items-center gap-2 text-center">
             <h1 className="text-[32px] font-bold leading-10 tracking-[-0.64px] text-text-primary">

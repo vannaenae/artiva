@@ -12,7 +12,7 @@ export function StorageFallbackBanner() {
   if (!storageFallbackActive) return null
 
   return (
-    <div className="mx-auto flex w-full max-w-[480px] items-start gap-2 bg-brand-soft/70 px-4 py-2 text-xs font-medium text-brand-darker">
+    <div className="mx-auto flex w-full max-w-[480px] items-start gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs font-medium text-amber-800">
       <CloudOff className="mt-0.5 size-3.5 shrink-0" />
       <span>
         Cloud storage isn&apos;t set up for this project yet — uploads are being kept in this

@@ -8,12 +8,12 @@ export function ResultVerifiedScreen() {
   return (
     <div className="app-shell overflow-hidden">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-10 -top-32 size-[500px] rounded-full bg-success/20 blur-3xl" />
-        <div className="absolute -right-10 -bottom-32 size-[400px] rounded-full bg-brand-soft/40 blur-3xl" />
+        <div className="absolute -left-10 -top-32 size-[500px] rounded-full bg-success/15 blur-3xl" />
+        <div className="absolute -right-10 -bottom-32 size-[400px] rounded-full bg-brand-soft/50 blur-3xl" />
       </div>
       <div className="h-2 w-full shrink-0 bg-navy" />
       <div className="relative flex flex-1 flex-col items-center justify-center px-4">
-        <div className="relative w-full max-w-sm rounded-xl border border-border bg-white/80 p-8 text-center shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)] backdrop-blur-md">
+        <div className="relative w-full max-w-sm rounded-xl border border-border bg-white/80 p-8 text-center shadow-modal backdrop-blur-md">
           <div className="mx-auto -mt-4 mb-4 flex size-20 items-center justify-center">
             <span className="relative flex size-20 items-center justify-center rounded-full bg-success-soft ring-1 ring-success/20">
               <BadgeCheck className="size-10 text-success" strokeWidth={2} />

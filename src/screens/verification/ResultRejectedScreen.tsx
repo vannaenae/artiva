@@ -20,7 +20,7 @@ export function ResultRejectedScreen() {
       </div>
       <div className="h-2 w-full shrink-0 bg-navy" />
       <div className="relative flex flex-1 flex-col items-center justify-center px-4">
-        <div className="w-full max-w-sm rounded-xl border border-border bg-white/90 p-8 text-center shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)] backdrop-blur-md">
+        <div className="w-full max-w-sm rounded-xl border border-border bg-white/90 p-8 text-center shadow-modal backdrop-blur-md">
           <div className="mx-auto -mt-4 mb-4 flex size-20 items-center justify-center">
             <span className="relative flex size-20 items-center justify-center rounded-full bg-danger-soft ring-1 ring-danger/20">
               <ShieldAlert className="size-10 text-danger" strokeWidth={2} />

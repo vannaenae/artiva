@@ -52,8 +52,8 @@ export function SwitchRoleScreen() {
           type="button"
           onClick={() => setSelected(otherRole)}
           className={cn(
-            'flex w-full items-center gap-4 rounded-xl border bg-white p-[17px] text-left shadow-[0_4px_8px_rgba(18,24,38,0.04)]',
-            selected === otherRole ? 'border-brand ring-2 ring-brand/20' : 'border-border',
+            'flex w-full items-center gap-4 rounded-xl border bg-white p-[17px] text-left shadow-card',
+            selected === otherRole ? 'border-brand ring-2 ring-brand/20' : 'border-border hover:border-text-muted/30',
           )}
         >
           <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-chip">

@@ -66,7 +66,7 @@ export function TermsConsentScreen() {
           </p>
         </div>
 
-        <div className="mb-6 max-h-80 overflow-y-auto rounded-xl border border-border bg-white p-[17px] shadow-[0_16px_32px_0_rgba(21,27,41,0.04)]">
+        <div className="mb-6 max-h-80 overflow-y-auto rounded-xl border border-border bg-white p-[17px] shadow-card">
           <div className="flex flex-col gap-4">
             {SECTIONS.map((section) => (
               <div key={section.heading}>

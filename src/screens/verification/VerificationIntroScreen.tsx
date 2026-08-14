@@ -46,7 +46,7 @@ export function VerificationIntroScreen() {
           {BENEFITS.map((benefit) => (
             <div
               key={benefit.title}
-              className="flex items-start gap-4 rounded-xl border border-border bg-app-bg p-[17px] shadow-[0_1px_1px_rgba(0,0,0,0.05)]"
+              className="flex items-start gap-4 rounded-xl border border-border bg-white p-[17px] shadow-card"
             >
               <span className="flex size-11 shrink-0 items-center justify-center">{benefit.icon}</span>
               <div>

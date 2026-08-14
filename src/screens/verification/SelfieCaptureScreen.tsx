@@ -83,7 +83,7 @@ export function SelfieCaptureScreen() {
           </div>
         </div>
 
-        <div className="flex flex-col items-center rounded-t-3xl bg-app-bg px-4 pb-6 pt-4 shadow-[0_-8px_15px_rgba(0,0,0,0.12)]">
+        <div className="flex flex-col items-center rounded-t-3xl bg-app-bg px-4 pb-6 pt-4 shadow-[0_-8px_24px_rgba(15,23,42,0.1)]">
           <div className="flex flex-col items-center justify-center pb-6 pt-4">
             <div className="relative flex size-24 items-center justify-center">
               <div className="absolute inset-0 rounded-full border-2 border-brand/50" />

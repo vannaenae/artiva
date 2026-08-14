@@ -90,8 +90,8 @@ export function ProofOfAddressScreen() {
                   type="button"
                   onClick={() => setDocType(doc.type)}
                   className={cn(
-                    'relative flex w-full items-center gap-4 rounded-xl border bg-white p-[17px] text-left shadow-[0_1px_1px_rgba(0,0,0,0.05)]',
-                    isSelected ? 'border-brand' : 'border-border-warm',
+                    'relative flex w-full items-center gap-4 rounded-xl border bg-white p-[17px] text-left shadow-card transition-colors',
+                    isSelected ? 'border-brand ring-2 ring-brand/10' : 'border-border hover:border-text-muted/30',
                   )}
                 >
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-chip-blue">

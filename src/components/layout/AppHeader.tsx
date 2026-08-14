@@ -38,7 +38,7 @@ export function AppHeader({
   return (
     <header
       className={cn(
-        'sticky top-0 z-30 flex h-16 w-full items-center gap-2 bg-navy px-4 text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)]',
+        'sticky top-0 z-30 flex h-16 w-full items-center gap-2 border-b border-black/10 bg-navy px-4 text-white shadow-card',
         className,
       )}
     >

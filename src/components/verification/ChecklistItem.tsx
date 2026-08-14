@@ -22,7 +22,7 @@ export function ChecklistItem({ icon, title, status, onClick }: ChecklistItemPro
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-4 rounded-xl border border-border-warm/30 bg-app-bg p-[17px] text-left shadow-[0_16px_32px_-12px_rgba(18,24,38,0.04)] transition active:scale-[0.99]"
+      className="flex w-full items-center gap-4 rounded-xl border border-border bg-white p-[17px] text-left shadow-card transition hover:border-text-muted/30 active:scale-[0.99]"
     >
       <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-chip">
         {icon}

@@ -60,8 +60,8 @@ export function RoleSelectionScreen() {
                   type="button"
                   onClick={() => setSelected(role)}
                   className={cn(
-                    'flex w-full items-center gap-4 rounded-xl border bg-white p-[17px] text-left shadow-[0_4px_8px_rgba(18,24,38,0.04)] transition',
-                    isSelected ? 'border-brand ring-2 ring-brand/20' : 'border-border',
+                    'flex w-full items-center gap-4 rounded-xl border bg-white p-[17px] text-left shadow-card transition',
+                    isSelected ? 'border-brand ring-2 ring-brand/20' : 'border-border hover:border-text-muted/30',
                   )}
                 >
                   <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-chip">

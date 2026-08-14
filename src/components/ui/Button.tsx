@@ -13,10 +13,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    'bg-brand text-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)] disabled:opacity-60',
-  secondary: 'bg-border text-text-secondary',
-  ghost: 'bg-transparent text-text-secondary border border-border',
-  dark: 'bg-navy text-white',
+    'bg-brand text-white shadow-raised hover:bg-brand-dark disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none',
+  secondary:
+    'bg-white text-text-secondary border border-border hover:border-text-muted/40 hover:text-text-primary disabled:text-slate-300',
+  ghost: 'bg-transparent text-text-secondary border border-border hover:bg-surface-muted disabled:text-slate-300',
+  dark: 'bg-navy text-white hover:bg-navy-soft disabled:bg-slate-200 disabled:text-slate-400',
 }
 
 export function Button({
@@ -33,7 +34,8 @@ export function Button({
   return (
     <button
       className={cn(
-        'inline-flex w-full items-center justify-center gap-2 px-4 py-3.5 text-sm font-semibold tracking-[0.14px] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:active:scale-100',
+        'inline-flex w-full items-center justify-center gap-2 px-4 py-3.5 text-sm font-semibold tracking-[0.14px] transition-colors active:scale-[0.98] disabled:cursor-not-allowed disabled:active:scale-100',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-app-bg',
         pill ? 'rounded-full' : 'rounded-xl',
         variantClasses[variant],
         className,
