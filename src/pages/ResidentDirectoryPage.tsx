@@ -81,6 +81,10 @@ export const ResidentDirectoryPage: React.FC = () => {
   }, [artisans, activeCategory, onlyVerified, minRating, searchQuery]);
 
   const handleOpenBookingModal = (artisan: Artisan) => {
+    if (!userSession) {
+      navigate('/login');
+      return;
+    }
     setSelectedArtisanForBooking(artisan);
     setServiceDescription('');
     setPricingType('fixed_rate');
@@ -94,7 +98,7 @@ export const ResidentDirectoryPage: React.FC = () => {
       ? (selectedArtisanForBooking.inspectionFee || 3000)
       : (selectedArtisanForBooking.hourlyRate * estimatedHours);
 
-    const email = userSession?.email || 'folake.kuti@example.ng';
+    const email = userSession?.email || `${(userSession?.phone || 'resident').replace(/\D/g, '')}@artiva.ng`;
 
     // Trigger Paystack Inline NGN Payment Pop-up
     triggerPaystackEscrowPayment(

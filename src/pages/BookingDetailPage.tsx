@@ -35,10 +35,20 @@ export const BookingDetailPage: React.FC = () => {
   } = useApp();
 
   // Extract ID from current hash path e.g. /bookings/bk-105
-  const bookingId = currentPath.split('/bookings/')[1] || 'bk-101';
-  const booking = bookings.find(b => b.id === bookingId) || bookings[0];
+  const bookingId = currentPath.split('/bookings/')[1] || '';
+  const booking = bookings.find(b => b.id === bookingId);
 
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState<boolean>(false);
+
+  if (!booking) {
+    return (
+      <div className="max-w-md mx-auto py-16 text-center space-y-4">
+        <h2 className="text-xl font-bold text-slate-900 font-heading">Booking Not Found</h2>
+        <p className="text-xs text-slate-500">This booking doesn't exist or has been removed.</p>
+        <Button variant="primary" size="md" onClick={() => navigate('/bookings')}>Back to Bookings</Button>
+      </div>
+    );
+  }
 
   const steps = [
     { key: 'requested', label: 'Booking Requested', desc: 'Escrow locked by resident' },

@@ -23,11 +23,11 @@ import {
 } from 'lucide-react';
 
 export const ArtisanProfilePage: React.FC = () => {
-  const { currentPath, navigate, artisans, createBooking } = useApp();
+  const { currentPath, navigate, artisans, userSession, createBooking } = useApp();
 
   // Extract artisan ID from route hash e.g. /artisan/art-1
-  const artisanId = currentPath.split('/artisan/')[1] || 'art-1';
-  const artisan = artisans.find(a => a.id === artisanId) || artisans[0];
+  const artisanId = currentPath.split('/artisan/')[1] || '';
+  const artisan = artisans.find(a => a.id === artisanId);
 
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [serviceDescription, setServiceDescription] = useState('');
@@ -36,9 +36,17 @@ export const ArtisanProfilePage: React.FC = () => {
   const [pricingType, setPricingType] = useState<PricingType>('fixed_rate');
   const [estimatedHours, setEstimatedHours] = useState(2);
 
+  const handleOpenBookingModal = () => {
+    if (!userSession) {
+      navigate('/login');
+      return;
+    }
+    setIsBookingModalOpen(true);
+  };
+
   const handleCreateBooking = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!serviceDescription.trim()) return;
+    if (!artisan || !serviceDescription.trim()) return;
 
     const booking = createBooking(
       artisan.id,
@@ -53,9 +61,25 @@ export const ArtisanProfilePage: React.FC = () => {
     navigate(`/bookings/${booking.id}`);
   };
 
+  if (!artisan) {
+    return (
+      <div className="max-w-md mx-auto py-16 text-center space-y-4">
+        <h2 className="text-xl font-bold text-slate-900 font-heading">Artisan Not Found</h2>
+        <p className="text-xs text-slate-500">This artisan profile doesn't exist or is no longer available.</p>
+        <button
+          onClick={() => navigate('/directory')}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-artiva-teal hover:underline"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Artisan Directory
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 py-4 animate-fade-in">
-      
+
       {/* Back to Directory Button */}
       <button
         onClick={() => navigate('/directory')}
@@ -116,7 +140,7 @@ export const ArtisanProfilePage: React.FC = () => {
             <Button
               variant="gold"
               size="md"
-              onClick={() => setIsBookingModalOpen(true)}
+              onClick={handleOpenBookingModal}
               className="w-full justify-center"
               icon={<Calendar className="w-4 h-4 text-slate-900" />}
             >

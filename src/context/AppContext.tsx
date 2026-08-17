@@ -117,15 +117,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [selectedEstate, setSelectedEstate] = useState<Estate>(ESTATES[0]);
 
-  const [userSession, setUserSession] = useState<UserSession | null>({
-    id: 'res-1',
-    name: 'Mrs. Folake Kuti',
-    phone: '+234 803 999 1111',
-    email: 'folake.kuti@example.ng',
-    role: 'resident',
-    estateId: 'est-1',
-    estateName: 'Lekki Phase 1 Estate',
-  });
+  const [userSession, setUserSession] = useState<UserSession | null>(null);
 
   const [currentRole, setCurrentRole] = useState<UserRole>('resident');
 
@@ -167,8 +159,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const loginWithOtp = (phone: string, role: UserRole, otpCode = '1234'): UserSession => {
     let session: UserSession;
     if (role === 'resident') {
-      const match = residents.find(r => r.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, '')) || residents[0];
-      session = {
+      const match = residents.find(r => r.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, ''));
+      session = match ? {
         id: match.id,
         name: match.name,
         phone: match.phone,
@@ -176,10 +168,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         role: 'resident',
         estateId: match.estateId,
         estateName: match.estateName,
+      } : {
+        id: `res-${Date.now()}`,
+        name: 'New Resident',
+        phone,
+        role: 'resident',
+        estateId: selectedEstate.id,
+        estateName: selectedEstate.name,
       };
     } else if (role === 'artisan') {
-      const match = artisans.find(a => a.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, '')) || artisans[0];
-      session = {
+      const match = artisans.find(a => a.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, ''));
+      session = match ? {
         id: match.id,
         name: match.name,
         phone: match.phone,
@@ -187,6 +186,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         role: 'artisan',
         estateId: match.estateId,
         estateName: match.estateName,
+      } : {
+        id: `art-${Date.now()}`,
+        name: 'New Artisan',
+        phone,
+        role: 'artisan',
+        estateId: selectedEstate.id,
+        estateName: selectedEstate.name,
       };
     } else {
       session = {
@@ -308,9 +314,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const newBooking: Booking = {
       id: `bk-${Date.now().toString().slice(-4)}`,
-      residentId: userSession?.id || 'res-1',
-      residentName: userSession?.name || 'Mrs. Folake Kuti',
-      residentPhone: userSession?.phone || '+234 803 999 1111',
+      residentId: userSession?.id || 'guest',
+      residentName: userSession?.name || 'Resident',
+      residentPhone: userSession?.phone || '',
       residentEstate: selectedEstate.name,
       artisanId,
       artisanName: artisan?.name || 'Artisan',

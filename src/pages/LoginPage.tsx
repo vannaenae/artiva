@@ -9,8 +9,8 @@ export const LoginPage: React.FC = () => {
   const { loginWithOtp, navigate } = useApp();
 
   const [role, setRole] = useState<UserRole>('resident');
-  const [phone, setPhone] = useState<string>('+234 803 999 1111');
-  const [otp, setOtp] = useState<string>('1234');
+  const [phone, setPhone] = useState<string>('');
+  const [otp, setOtp] = useState<string>('');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
 
   const handleSendOtp = (e: React.FormEvent) => {
@@ -49,10 +49,7 @@ export const LoginPage: React.FC = () => {
         <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-artiva border border-slate-200 text-xs font-bold">
           <button
             type="button"
-            onClick={() => {
-              setRole('resident');
-              setPhone('+234 803 999 1111');
-            }}
+            onClick={() => setRole('resident')}
             className={`py-2 rounded flex items-center justify-center gap-1 transition-all ${
               role === 'resident' ? 'bg-artiva-teal text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}
@@ -63,10 +60,7 @@ export const LoginPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => {
-              setRole('artisan');
-              setPhone('+234 803 123 4567');
-            }}
+            onClick={() => setRole('artisan')}
             className={`py-2 rounded flex items-center justify-center gap-1 transition-all ${
               role === 'artisan' ? 'bg-artiva-teal text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}
@@ -77,10 +71,7 @@ export const LoginPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => {
-              setRole('admin');
-              setPhone('+234 800 111 2222');
-            }}
+            onClick={() => setRole('admin')}
             className={`py-2 rounded flex items-center justify-center gap-1 transition-all ${
               role === 'admin' ? 'bg-artiva-gold text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}

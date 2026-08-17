@@ -10,7 +10,7 @@ import { ShieldCheck, Award, Upload, CheckCircle2, FileText, Lock } from 'lucide
 export const ArtisanVerificationPage: React.FC = () => {
   const { artisans, signupArtisan, userSession, selectedEstate } = useApp();
 
-  const currentArtisan = artisans.find(a => a.phone === userSession?.phone) || artisans[5]; // Olumide Fashola
+  const currentArtisan = artisans.find(a => a.phone === userSession?.phone);
 
   const [name, setName] = useState<string>(currentArtisan?.name || 'New Artisan');
   const [category, setCategory] = useState<ServiceCategory>('plumbing');
