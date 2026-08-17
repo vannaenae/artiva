@@ -68,11 +68,10 @@ export const LandingPage: React.FC = () => {
               </Button>
 
               <Button
-                variant="outline"
+                variant="outline-white"
                 size="lg"
                 onClick={() => navigate('/signup')}
-                className="text-white border-white/30 hover:bg-white/10"
-                icon={<UserCheck className="w-5 h-5" />}
+                icon={<UserCheck className="w-5 h-5 text-white" />}
               >
                 Register as Artisan
               </Button>
