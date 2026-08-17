@@ -15,7 +15,6 @@ import {
   Shield,
   Home,
   LogIn,
-  Zap,
   Menu,
   X
 } from 'lucide-react';
@@ -28,7 +27,6 @@ export const Navbar: React.FC = () => {
     isMobileMenuOpen,
     setIsMobileMenuOpen,
     currentRole, 
-    setCurrentRole,
     selectedEstate, 
     setSelectedEstate, 
     userSession, 
@@ -43,69 +41,7 @@ export const Navbar: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-artiva-sm">
       
-      {/* 1. Role Test Bar */}
-      <div className="bg-slate-900 text-white text-xs py-1.5 px-4 border-b border-slate-800">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 bg-artiva-teal/30 text-teal-300 px-2 py-0.5 rounded font-bold text-[11px]">
-              <Zap className="w-3.5 h-3.5 text-teal-300 shrink-0" />
-              Demo Mode
-            </span>
-            <span className="hidden sm:inline text-slate-400">
-              Interactive session state in memory. Switch test roles:
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1 bg-slate-800 p-0.5 rounded-artiva">
-            <button
-              onClick={() => {
-                setCurrentRole('resident');
-                navigate('/directory');
-              }}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold transition-all ${
-                currentRole === 'resident'
-                  ? 'bg-artiva-teal text-white shadow'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <User className="w-3 h-3" />
-              Resident
-            </button>
-
-            <button
-              onClick={() => {
-                setCurrentRole('artisan');
-                navigate('/artisan-dashboard');
-              }}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold transition-all ${
-                currentRole === 'artisan'
-                  ? 'bg-artiva-teal text-white shadow'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <UserCheck className="w-3 h-3" />
-              Artisan
-            </button>
-
-            <button
-              onClick={() => {
-                setCurrentRole('admin');
-                navigate('/admin/verifications');
-              }}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold transition-all ${
-                currentRole === 'admin'
-                  ? 'bg-artiva-gold text-slate-900 shadow'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Shield className="w-3 h-3" />
-              Admin
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Main Desktop & Mobile Header Bar */}
+      {/* Main Header Bar (Hidden Admin View - Zero Public Admin Links) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-3">
           
@@ -122,7 +58,7 @@ export const Navbar: React.FC = () => {
                 <span className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 font-heading">Artiva</span>
                 <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 bg-artiva-teal-light text-artiva-teal-dark rounded">Estate</span>
               </div>
-              <p className="text-[10px] sm:text-[11px] text-slate-500 hidden sm:block">Verified Artisans • Escrow Vault</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 hidden sm:block">Verified Artisans • Paystack Escrow Vault</p>
             </div>
           </div>
 
@@ -146,7 +82,7 @@ export const Navbar: React.FC = () => {
             </select>
           </div>
 
-          {/* Navigation Links (Desktop) */}
+          {/* Navigation Links (Desktop - strictly partitioned) */}
           <nav className="hidden md:flex items-center gap-1 sm:gap-2">
             <button
               onClick={() => navigate('/')}
@@ -169,9 +105,10 @@ export const Navbar: React.FC = () => {
               }`}
             >
               <Search className="w-4 h-4" />
-              <span>Directory</span>
+              <span>Artisan Directory</span>
             </button>
 
+            {/* Resident Navigation */}
             {currentRole === 'resident' && (
               <>
                 <button
@@ -183,7 +120,7 @@ export const Navbar: React.FC = () => {
                   }`}
                 >
                   <Calendar className="w-4 h-4" />
-                  <span>Bookings</span>
+                  <span>My Bookings</span>
                   {activeBookingsCount > 0 && (
                     <span className="ml-1 px-1.5 py-0.5 bg-artiva-teal text-white text-[10px] rounded-full font-bold">
                       {activeBookingsCount}
@@ -210,6 +147,7 @@ export const Navbar: React.FC = () => {
               </>
             )}
 
+            {/* Artisan Navigation */}
             {currentRole === 'artisan' && (
               <>
                 <button
@@ -238,25 +176,26 @@ export const Navbar: React.FC = () => {
               </>
             )}
 
+            {/* Secret Admin View links ONLY if user is explicitly authenticated as admin */}
             {currentRole === 'admin' && (
               <button
                 onClick={() => navigate('/admin/verifications')}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-artiva text-xs font-semibold transition-all ${
-                  currentPath === '/admin/verifications'
-                    ? 'bg-artiva-gold-light text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                }`}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-artiva text-xs font-semibold bg-slate-900 text-amber-300 shadow-sm"
               >
-                <Award className="w-4 h-4 text-artiva-gold-dark" />
-                <span>Verification Review Queue</span>
+                <Shield className="w-4 h-4 text-amber-400" />
+                <span>Admin Review Console</span>
               </button>
             )}
           </nav>
 
-          {/* User Auth & Hamburger Toggle */}
+          {/* Auth Actions */}
           <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-2">
-              {userSession ? (
+            {userSession ? (
+              <div className="flex items-center gap-2">
+                <div className="hidden sm:flex flex-col text-right">
+                  <span className="text-xs font-bold text-slate-800">{userSession.name}</span>
+                  <span className="text-[10px] text-slate-500 uppercase font-semibold">{userSession.role}</span>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -265,17 +204,17 @@ export const Navbar: React.FC = () => {
                 >
                   Sign Out
                 </Button>
-              ) : (
-                <div className="flex items-center gap-1.5">
-                  <Button variant="outline" size="sm" onClick={() => navigate('/login')} icon={<LogIn className="w-3.5 h-3.5" />}>
-                    Sign In
-                  </Button>
-                  <Button variant="primary" size="sm" onClick={() => navigate('/signup')}>
-                    Register
-                  </Button>
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <Button variant="outline" size="sm" onClick={() => navigate('/login')} icon={<LogIn className="w-3.5 h-3.5" />}>
+                  Sign In
+                </Button>
+                <Button variant="primary" size="sm" onClick={() => navigate('/signup')}>
+                  Register
+                </Button>
+              </div>
+            )}
 
             {/* Mobile Hamburger Toggle Button */}
             <button
@@ -290,7 +229,7 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Mobile Navigation Drawer Overlay */}
+      {/* Mobile Navigation Drawer */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-4 animate-fade-in shadow-artiva-lg">
           
@@ -305,7 +244,7 @@ export const Navbar: React.FC = () => {
                 const est = ESTATES.find(item => item.id === e.target.value);
                 if (est) setSelectedEstate(est);
               }}
-              className="w-full bg-white text-xs font-bold text-slate-900 border border-slate-300 rounded p-2 focus:ring-1 focus:ring-artiva-teal outline-none"
+              className="w-full bg-white text-xs font-bold text-slate-900 border border-slate-300 rounded p-2 outline-none"
             >
               {ESTATES.map(estate => (
                 <option key={estate.id} value={estate.id}>
@@ -402,17 +341,15 @@ export const Navbar: React.FC = () => {
             {currentRole === 'admin' && (
               <button
                 onClick={() => navigate('/admin/verifications')}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-artiva text-sm font-semibold transition-all ${
-                  currentPath === '/admin/verifications' ? 'bg-artiva-gold-light text-slate-900' : 'text-slate-700 hover:bg-slate-50'
-                }`}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-artiva text-sm font-semibold bg-slate-900 text-amber-300"
               >
-                <Award className="w-5 h-5 text-artiva-gold-dark" />
-                <span>Admin Review Queue</span>
+                <Shield className="w-5 h-5 text-amber-400" />
+                <span>Admin Review Console</span>
               </button>
             )}
           </div>
 
-          {/* Mobile Auth Buttons */}
+          {/* Mobile Auth Actions */}
           <div className="pt-2 border-t border-slate-200 flex flex-col gap-2">
             {userSession ? (
               <Button

@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Artisan, PricingType } from '../types';
 import { formatCurrency, formatDistance } from '../lib/utils';
+import { triggerPaystackEscrowPayment } from '../lib/paystack';
 import { 
   Search, 
   MapPin, 
@@ -23,7 +24,8 @@ import {
   Lock, 
   AlertCircle,
   Eye,
-  CheckCircle2
+  CheckCircle2,
+  CreditCard
 } from 'lucide-react';
 
 export const ResidentDirectoryPage: React.FC = () => {
@@ -34,6 +36,7 @@ export const ResidentDirectoryPage: React.FC = () => {
     setActiveCategory, 
     searchQuery, 
     setSearchQuery,
+    userSession,
     navigate,
     createBooking 
   } = useApp();
@@ -53,19 +56,15 @@ export const ResidentDirectoryPage: React.FC = () => {
   const filteredArtisans = useMemo(() => {
     return artisans
       .filter(artisan => {
-        // Category filter
         if (activeCategory !== 'all' && artisan.category !== activeCategory) {
           return false;
         }
-        // Verified filter
         if (onlyVerified && artisan.verificationStatus !== 'verified') {
           return false;
         }
-        // Rating filter
         if (minRating > 0 && artisan.rating < minRating) {
           return false;
         }
-        // Search query
         if (searchQuery.trim() !== '') {
           const q = searchQuery.toLowerCase();
           const matchesName = artisan.name.toLowerCase().includes(q);
@@ -78,7 +77,6 @@ export const ResidentDirectoryPage: React.FC = () => {
         }
         return true;
       })
-      // Nearest First Proximity Sort
       .sort((a, b) => a.distanceKm - b.distanceKm);
   }, [artisans, activeCategory, onlyVerified, minRating, searchQuery]);
 
@@ -88,21 +86,40 @@ export const ResidentDirectoryPage: React.FC = () => {
     setPricingType('fixed_rate');
   };
 
-  const handleConfirmBooking = (e: React.FormEvent) => {
+  const handleConfirmBookingWithPaystack = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedArtisanForBooking || !serviceDescription.trim()) return;
 
-    const booking = createBooking(
-      selectedArtisanForBooking.id,
-      serviceDescription,
-      preferredDate,
-      preferredTime,
-      pricingType,
-      estimatedHours
-    );
+    const amountInNaira = pricingType === 'inspection_first'
+      ? (selectedArtisanForBooking.inspectionFee || 3000)
+      : (selectedArtisanForBooking.hourlyRate * estimatedHours);
 
-    setSelectedArtisanForBooking(null);
-    navigate(`/bookings/${booking.id}`);
+    const email = userSession?.email || 'folake.kuti@example.ng';
+
+    // Trigger Paystack Inline NGN Payment Pop-up
+    triggerPaystackEscrowPayment(
+      email,
+      amountInNaira,
+      {
+        artisanName: selectedArtisanForBooking.name,
+        estateName: selectedEstate.name,
+        serviceDescription,
+      },
+      (reference) => {
+        // Callback on Paystack payment success
+        const booking = createBooking(
+          selectedArtisanForBooking.id,
+          serviceDescription,
+          preferredDate,
+          preferredTime,
+          pricingType,
+          estimatedHours
+        );
+
+        setSelectedArtisanForBooking(null);
+        navigate(`/bookings/${booking.id}`);
+      }
+    );
   };
 
   return (
@@ -125,7 +142,7 @@ export const ResidentDirectoryPage: React.FC = () => {
 
           <div className="flex items-center gap-2 bg-artiva-teal-light px-3.5 py-2 rounded-artiva border border-artiva-teal/20 text-xs font-bold text-artiva-teal-dark shrink-0">
             <ShieldCheck className="w-4 h-4 text-emerald-600 animate-badge-pulse" />
-            <span>Escrow Protected • Zero Cash Risk</span>
+            <span>Paystack Escrow Protected • Zero Cash Risk</span>
           </div>
         </div>
 
@@ -142,7 +159,7 @@ export const ResidentDirectoryPage: React.FC = () => {
         />
       </div>
 
-      {/* Artisans Grid (Mobile 1-col, Tablet 2-col, Desktop 3-col) */}
+      {/* Artisans Grid */}
       {filteredArtisans.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredArtisans.map(artisan => (
@@ -173,14 +190,14 @@ export const ResidentDirectoryPage: React.FC = () => {
         </div>
       )}
 
-      {/* Booking Request Modal with Fixed vs On-Site Inspection Edge Case */}
+      {/* Booking Modal with Paystack Gateway */}
       {selectedArtisanForBooking && (
         <Modal
           isOpen={true}
           onClose={() => setSelectedArtisanForBooking(null)}
           title={`Book ${selectedArtisanForBooking.name}`}
         >
-          <form onSubmit={handleConfirmBooking} className="space-y-4">
+          <form onSubmit={handleConfirmBookingWithPaystack} className="space-y-4">
             
             <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-artiva border border-slate-200">
               <img
@@ -197,7 +214,7 @@ export const ResidentDirectoryPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Edge Case Choice: Pricing Structure */}
+            {/* Pricing Structure */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-800 font-heading block">
                 Select Pricing Model for this Job:
@@ -248,7 +265,7 @@ export const ResidentDirectoryPage: React.FC = () => {
                     How On-Site Inspection Works:
                   </div>
                   <p className="text-[11px] text-amber-800 leading-relaxed">
-                    The artisan will visit your home at your scheduled date/time to inspect the work. You lock a small diagnosis fee ({formatCurrency(selectedArtisanForBooking.inspectionFee || 3000)}) in escrow. After inspecting, the artisan submits an official quote proposal which you can approve or decline before work begins.
+                    The artisan will visit your home at your scheduled date/time to inspect the work. You lock a small diagnosis fee ({formatCurrency(selectedArtisanForBooking.inspectionFee || 3000)}) in Paystack escrow. After inspecting, the artisan submits an official quote proposal for your approval.
                   </p>
                 </div>
               )}
@@ -265,7 +282,7 @@ export const ResidentDirectoryPage: React.FC = () => {
                 value={serviceDescription}
                 onChange={(e) => setServiceDescription(e.target.value)}
                 placeholder="e.g. Pressure pump leaking water near generator room, hidden dampness behind kitchen tiles..."
-                className="w-full text-xs p-3 rounded-artiva border border-slate-300 focus:ring-2 focus:ring-artiva-teal focus:border-artiva-teal outline-none"
+                className="w-full text-xs p-3 rounded-artiva border border-slate-300 focus:ring-2 focus:ring-artiva-teal outline-none"
               />
             </div>
 
@@ -287,10 +304,10 @@ export const ResidentDirectoryPage: React.FC = () => {
               />
             </div>
 
-            {/* Escrow Deposit Summary */}
+            {/* Paystack Escrow Summary */}
             <div className="p-3 bg-slate-900 text-white rounded-artiva flex items-center justify-between text-xs">
               <div>
-                <span className="text-slate-400 text-[10px] uppercase font-bold block">Initial Escrow Hold</span>
+                <span className="text-slate-400 text-[10px] uppercase font-bold block">Paystack Escrow Hold</span>
                 <span className="font-extrabold text-sm text-amber-300 font-heading">
                   {pricingType === 'inspection_first'
                     ? formatCurrency(selectedArtisanForBooking.inspectionFee || 3000)
@@ -299,8 +316,8 @@ export const ResidentDirectoryPage: React.FC = () => {
               </div>
 
               <div className="text-right text-[10px] text-slate-300 flex items-center gap-1">
-                <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Protected in Escrow</span>
+                <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Paystack Gateway</span>
               </div>
             </div>
 
@@ -309,8 +326,8 @@ export const ResidentDirectoryPage: React.FC = () => {
               <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedArtisanForBooking(null)}>
                 Cancel
               </Button>
-              <Button type="submit" variant="gold" size="md" icon={<Lock className="w-4 h-4 text-slate-900" />}>
-                Confirm Booking & Deposit Escrow
+              <Button type="submit" variant="gold" size="md" icon={<CreditCard className="w-4 h-4 text-slate-900" />}>
+                Pay via Paystack & Lock Escrow
               </Button>
             </div>
 

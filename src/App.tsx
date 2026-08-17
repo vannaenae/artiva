@@ -2,7 +2,9 @@ import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/ui/Navbar';
 import { Footer } from './components/ui/Footer';
+import { FirebaseWarningBanner } from './components/auth/FirebaseWarningBanner';
 
+// Pages Inventory
 import { LandingPage } from './pages/LandingPage';
 import { ResidentDirectoryPage } from './pages/ResidentDirectoryPage';
 import { ArtisanProfilePage } from './pages/ArtisanProfilePage';
@@ -14,36 +16,70 @@ import { AdminVerificationPage } from './pages/AdminVerificationPage';
 import { DisputesPage } from './pages/DisputesPage';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
+import { AdminLoginPage } from './pages/AdminLoginPage';
 
-const AppContent: React.FC = () => {
-  const { currentPath } = useApp();
+const RouterContent: React.FC = () => {
+  const { currentPath, currentRole } = useApp();
 
-  const renderPage = () => {
-    if (currentPath === '/') return <LandingPage />;
-    if (currentPath === '/directory') return <ResidentDirectoryPage />;
-    if (currentPath.startsWith('/artisan/')) return <ArtisanProfilePage />;
-    if (currentPath === '/bookings') return <BookingsPage />;
-    if (currentPath.startsWith('/bookings/')) return <BookingDetailPage />;
-    if (currentPath === '/artisan-dashboard') return <ArtisanDashboardPage />;
-    if (currentPath === '/verification') return <ArtisanVerificationPage />;
-    if (currentPath === '/admin/verifications') return <AdminVerificationPage />;
-    if (currentPath === '/disputes') return <DisputesPage />;
-    if (currentPath === '/login') return <LoginPage />;
-    if (currentPath === '/signup') return <SignupPage />;
+  const renderCurrentRoute = () => {
+    // Route matching
+    if (currentPath === '/') {
+      return <LandingPage />;
+    }
+    if (currentPath === '/directory') {
+      return <ResidentDirectoryPage />;
+    }
+    if (currentPath.startsWith('/artisan/')) {
+      return <ArtisanProfilePage />;
+    }
+    if (currentPath === '/bookings') {
+      return <BookingsPage />;
+    }
+    if (currentPath.startsWith('/bookings/')) {
+      return <BookingDetailPage />;
+    }
+    if (currentPath === '/artisan-dashboard') {
+      return <ArtisanDashboardPage />;
+    }
+    if (currentPath === '/verification') {
+      return <ArtisanVerificationPage />;
+    }
+    
+    // Secret Admin Access Portal Route
+    if (currentPath === '/admin/secret-portal' || currentPath === '/admin/login') {
+      return <AdminLoginPage />;
+    }
+    
+    if (currentPath === '/admin/verifications') {
+      if (currentRole !== 'admin') {
+        return <AdminLoginPage />;
+      }
+      return <AdminVerificationPage />;
+    }
+    
+    if (currentPath === '/disputes') {
+      return <DisputesPage />;
+    }
+    if (currentPath === '/login') {
+      return <LoginPage />;
+    }
+    if (currentPath === '/signup') {
+      return <SignupPage />;
+    }
+
+    // Default fallback
     return <LandingPage />;
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans">
-      {/* 1. Header Navigation Bar */}
-      <Navbar />
-
-      {/* 2. Main Page View Container */}
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderPage()}
-      </main>
-
-      {/* 3. Footer */}
+    <div className="min-h-screen flex flex-col justify-between bg-slate-50 text-slate-900 font-sans">
+      <div>
+        <Navbar />
+        <FirebaseWarningBanner />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {renderCurrentRoute()}
+        </main>
+      </div>
       <Footer />
     </div>
   );
@@ -52,7 +88,7 @@ const AppContent: React.FC = () => {
 export function App() {
   return (
     <AppProvider>
-      <AppContent />
+      <RouterContent />
     </AppProvider>
   );
 }
