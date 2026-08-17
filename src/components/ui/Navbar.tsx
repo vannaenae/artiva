@@ -16,8 +16,7 @@ import {
   Home,
   LogIn,
   Menu,
-  X,
-  Settings
+  X
 } from 'lucide-react';
 import { Button } from './Button';
 
@@ -103,7 +102,7 @@ export const Navbar: React.FC = () => {
               <span>Artisan Directory</span>
             </button>
 
-            {currentRole === 'resident' && (
+            {userSession && currentRole === 'resident' && (
               <>
                 <button
                   onClick={() => navigate('/bookings')}
@@ -137,7 +136,7 @@ export const Navbar: React.FC = () => {
               </>
             )}
 
-            {currentRole === 'artisan' && (
+            {userSession && currentRole === 'artisan' && (
               <>
                 <button
                   onClick={() => navigate('/artisan-dashboard')}
@@ -161,7 +160,7 @@ export const Navbar: React.FC = () => {
               </>
             )}
 
-            {currentRole === 'admin' && (
+            {userSession && currentRole === 'admin' && (
               <button
                 onClick={() => navigate('/admin/verifications')}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-artiva text-xs font-semibold bg-slate-900 text-amber-300 shadow-sm"
@@ -233,6 +232,56 @@ export const Navbar: React.FC = () => {
             >
               <Search className="w-5 h-5 text-artiva-teal" /> Artisan Directory
             </button>
+
+            {userSession && currentRole === 'resident' && (
+              <>
+                <button
+                  onClick={() => navigate('/bookings')}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-artiva text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <Calendar className="w-5 h-5 text-artiva-teal" /> My Bookings
+                  {activeBookingsCount > 0 && (
+                    <span className="ml-auto px-1.5 py-0.5 bg-artiva-teal text-white text-[10px] rounded-full font-bold">{activeBookingsCount}</span>
+                  )}
+                </button>
+                <button
+                  onClick={() => navigate('/disputes')}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-artiva text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <AlertCircle className="w-5 h-5 text-artiva-teal" /> Disputes
+                  {activeDisputesCount > 0 && (
+                    <span className="ml-auto px-1.5 py-0.5 bg-rose-600 text-white text-[10px] rounded-full font-bold">{activeDisputesCount}</span>
+                  )}
+                </button>
+              </>
+            )}
+
+            {userSession && currentRole === 'artisan' && (
+              <>
+                <button
+                  onClick={() => navigate('/artisan-dashboard')}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-artiva text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <Briefcase className="w-5 h-5 text-artiva-teal" /> Job Dashboard
+                </button>
+                <button
+                  onClick={() => navigate('/verification')}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-artiva text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <Award className="w-5 h-5 text-artiva-teal" /> Verify ID
+                </button>
+              </>
+            )}
+
+            {userSession && currentRole === 'admin' && (
+              <button
+                onClick={() => navigate('/admin/verifications')}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-artiva text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                <Shield className="w-5 h-5 text-artiva-teal" /> Admin Review Console
+              </button>
+            )}
+
             {userSession && (
               <button
                 onClick={() => navigate('/profile')}
@@ -240,6 +289,23 @@ export const Navbar: React.FC = () => {
               >
                 <User className="w-5 h-5 text-artiva-teal" /> My Profile & Contact Info
               </button>
+            )}
+          </div>
+
+          <div className="pt-3 border-t border-slate-100">
+            {userSession ? (
+              <Button variant="outline" size="md" fullWidth onClick={logout} icon={<LogOut className="w-4 h-4" />}>
+                Sign Out
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="md" fullWidth onClick={() => navigate('/login')} icon={<LogIn className="w-4 h-4" />}>
+                  Sign In
+                </Button>
+                <Button variant="primary" size="md" fullWidth onClick={() => navigate('/signup')}>
+                  Register
+                </Button>
+              </div>
             )}
           </div>
         </div>

@@ -7,6 +7,8 @@ export const ESTATES: Estate[] = [
     lga: 'Eti-Osa',
     state: 'Lagos',
     address: 'Admiralty Way, Lekki, Lagos',
+    lat: 6.4478,
+    lng: 3.4726,
   },
   {
     id: 'est-2',
@@ -14,6 +16,8 @@ export const ESTATES: Estate[] = [
     lga: 'Eti-Osa',
     state: 'Lagos',
     address: 'Lekki-Epe Expressway, VGC, Lagos',
+    lat: 6.4630,
+    lng: 3.5470,
   },
   {
     id: 'est-3',
@@ -21,6 +25,8 @@ export const ESTATES: Estate[] = [
     lga: 'Eti-Osa',
     state: 'Lagos',
     address: 'Ikota, Lekki, Lagos',
+    lat: 6.4480,
+    lng: 3.5470,
   },
   {
     id: 'est-4',
@@ -28,6 +34,8 @@ export const ESTATES: Estate[] = [
     lga: 'Eti-Osa',
     state: 'Lagos',
     address: 'Chevron Drive, Lekki, Lagos',
+    lat: 6.4410,
+    lng: 3.5330,
   },
 ];
 

@@ -81,6 +81,7 @@ export const VerificationReviewCard: React.FC<VerificationReviewCardProps> = ({
                   <Button
                     variant="primary"
                     size="sm"
+                    disabled={!artisan.idDocumentUrl}
                     onClick={() => onVerify(artisan.id, 'verified')}
                     icon={<Check className="w-4 h-4" />}
                   >
@@ -151,11 +152,17 @@ export const VerificationReviewCard: React.FC<VerificationReviewCardProps> = ({
             </div>
             
             <div className="border border-slate-200 rounded-artiva overflow-hidden bg-slate-50">
-              <img
-                src={artisan.idDocumentUrl}
-                alt="ID Document"
-                className="w-full h-64 object-cover"
-              />
+              {artisan.idDocumentUrl ? (
+                <img
+                  src={artisan.idDocumentUrl}
+                  alt="ID Document"
+                  className="w-full h-64 object-cover"
+                />
+              ) : (
+                <div className="h-32 flex items-center justify-center text-xs text-slate-400">
+                  No identity document submitted yet.
+                </div>
+              )}
             </div>
 
             <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded-artiva border border-slate-200">
@@ -175,6 +182,7 @@ export const VerificationReviewCard: React.FC<VerificationReviewCardProps> = ({
                 <Button
                   variant="primary"
                   size="sm"
+                  disabled={!artisan.idDocumentUrl}
                   onClick={() => {
                     onVerify(artisan.id, 'verified');
                     setShowDocModal(false);
