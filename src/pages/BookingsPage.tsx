@@ -16,32 +16,41 @@ import {
 } from 'lucide-react';
 
 export const BookingsPage: React.FC = () => {
-  const { 
-    bookings, 
-    currentRole, 
-    acceptBooking, 
-    declineBooking, 
-    startJob, 
-    completeJobByArtisan, 
+  const {
+    bookings,
+    currentRole,
+    userSession,
+    acceptBooking,
+    declineBooking,
+    startJob,
+    completeJobByArtisan,
     confirmJobByResident,
-    createDispute 
+    createDispute
   } = useApp();
 
   const [filterTab, setFilterTab] = useState<'all' | 'active' | 'completed' | 'disputed'>('all');
   const [selectedDisputeBooking, setSelectedDisputeBooking] = useState<Booking | null>(null);
 
-  const filteredBookings = bookings.filter((b) => {
+  // Residents and artisans only see bookings that involve them. Admins get
+  // oversight visibility across the whole platform.
+  const myBookings = bookings.filter((b) => {
+    if (currentRole === 'resident') return b.residentId === userSession?.id;
+    if (currentRole === 'artisan') return b.artisanId === userSession?.id;
+    return true;
+  });
+
+  const filteredBookings = myBookings.filter((b) => {
     if (filterTab === 'active') return b.status === 'requested' || b.status === 'accepted' || b.status === 'in_progress';
     if (filterTab === 'completed') return b.status === 'completed' || b.status === 'confirmed' || b.status === 'paid_out';
     if (filterTab === 'disputed') return b.status === 'disputed';
     return true;
   });
 
-  const totalEscrowHeld = bookings
+  const totalEscrowHeld = myBookings
     .filter(b => b.escrowStatus === 'held')
     .reduce((sum, b) => sum + b.totalAmount, 0);
 
-  const totalEscrowPaid = bookings
+  const totalEscrowPaid = myBookings
     .filter(b => b.escrowStatus === 'released')
     .reduce((sum, b) => sum + b.totalAmount, 0);
 
@@ -83,7 +92,7 @@ export const BookingsPage: React.FC = () => {
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
           }`}
         >
-          All Bookings ({bookings.length})
+          All Bookings ({myBookings.length})
         </button>
 
         <button

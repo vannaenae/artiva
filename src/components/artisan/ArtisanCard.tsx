@@ -7,10 +7,12 @@ import { Button } from '../ui/Button';
 import { formatCurrency, formatDistance } from '../../lib/utils';
 import { MapPin, Briefcase, Calendar, ShieldCheck, ArrowRight, Check } from 'lucide-react';
 
+type ArtisanWithDistance = Artisan & { distanceKm: number };
+
 interface ArtisanCardProps {
-  artisan: Artisan;
-  onSelect: (artisan: Artisan) => void;
-  onBook: (artisan: Artisan) => void;
+  artisan: ArtisanWithDistance;
+  onSelect: (artisan: ArtisanWithDistance) => void;
+  onBook: (artisan: ArtisanWithDistance) => void;
 }
 
 export const ArtisanCard: React.FC<ArtisanCardProps> = ({

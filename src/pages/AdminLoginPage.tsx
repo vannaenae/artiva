@@ -5,15 +5,20 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { ShieldCheck, Lock, ArrowRight, ShieldAlert, KeyRound } from 'lucide-react';
 
+// ponytail: this is a client-bundled passcode, not real authentication — anyone
+// who reads the built JS can find it. It's a speed bump for casual access, not
+// a security boundary. Upgrade to real backend-verified admin auth (Firebase
+// custom claims, a server-checked login) before this handles anything sensitive.
+const ADMIN_PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE || 'artiva-admin';
+
 export const AdminLoginPage: React.FC = () => {
-  const { setCurrentRole, navigate, loginWithOtp } = useApp();
+  const { navigate, loginWithOtp } = useApp();
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState('');
 
   const handleAdminAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    // Default admin passcode is 1234
-    if (passcode === '1234' || passcode === 'admin123' || passcode === 'artiva2026') {
+    if (passcode === ADMIN_PASSCODE) {
       loginWithOtp('+234 800 999 0000', 'admin');
       navigate('/admin/verifications');
     } else {
@@ -42,7 +47,7 @@ export const AdminLoginPage: React.FC = () => {
             label="Admin Security Passcode"
             type="password"
             required
-            placeholder="Enter security PIN (e.g. 1234)"
+            placeholder="Enter security passcode"
             value={passcode}
             onChange={(e) => {
               setPasscode(e.target.value);

@@ -6,7 +6,7 @@ import { Input } from '../components/ui/Input';
 import { User, Phone, Mail, MapPin, Edit3, Trash2, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
-  const { userSession, logout, navigate, selectedEstate } = useApp();
+  const { userSession, updateUserSession, logout, selectedEstate } = useApp();
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(userSession?.name || '');
@@ -16,11 +16,7 @@ export const ProfilePage: React.FC = () => {
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    if (userSession) {
-      userSession.name = name;
-      userSession.phone = phone;
-      userSession.email = email;
-    }
+    updateUserSession({ name, phone, email });
     setIsEditing(false);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
@@ -29,18 +25,12 @@ export const ProfilePage: React.FC = () => {
   const handleDeleteAccount = () => {
     if (window.confirm('Are you sure you want to delete your Artiva account? This action cannot be undone.')) {
       logout();
-      navigate('/');
     }
   };
 
-  if (!userSession) {
-    return (
-      <div className="max-w-md mx-auto py-12 text-center space-y-4">
-        <h2 className="text-xl font-bold text-slate-900">Sign in to view your profile</h2>
-        <Button variant="primary" size="md" onClick={() => navigate('/login')}>Sign In</Button>
-      </div>
-    );
-  }
+  // RequireAuth (in App.tsx) already redirects to /login when signed out —
+  // this is just a type-narrowing guard for the render below.
+  if (!userSession) return null;
 
   return (
     <div className="max-w-2xl mx-auto py-6 space-y-6 animate-fade-in">

@@ -6,54 +6,65 @@ import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Artisan, PricingType } from '../types';
-import { formatCurrency, formatDistance } from '../lib/utils';
+import { formatCurrency, formatDistance, haversineKm } from '../lib/utils';
 import { triggerPaystackEscrowPayment } from '../lib/paystack';
-import { 
-  Search, 
-  MapPin, 
-  ShieldCheck, 
-  Wrench, 
-  Zap, 
-  Sparkles, 
-  Wind, 
-  Tv, 
-  Hammer, 
-  Paintbrush, 
-  Calendar, 
-  Clock, 
-  Lock, 
+import {
+  Search,
+  MapPin,
+  ShieldCheck,
+  Wrench,
+  Zap,
+  Sparkles,
+  Wind,
+  Tv,
+  Hammer,
+  Paintbrush,
+  Calendar,
+  Clock,
+  Lock,
   AlertCircle,
   Eye,
   CheckCircle2,
-  CreditCard
+  CreditCard,
+  LocateFixed,
+  LoaderCircle
 } from 'lucide-react';
 
+type ArtisanWithDistance = Artisan & { distanceKm: number };
+
 export const ResidentDirectoryPage: React.FC = () => {
-  const { 
-    artisans, 
-    selectedEstate, 
-    activeCategory, 
-    setActiveCategory, 
-    searchQuery, 
+  const {
+    artisans,
+    selectedEstate,
+    activeCategory,
+    setActiveCategory,
+    searchQuery,
     setSearchQuery,
     userSession,
     navigate,
-    createBooking 
+    createBooking,
+    userLocation,
+    locationStatus,
+    requestUserLocation,
   } = useApp();
 
   const [onlyVerified, setOnlyVerified] = useState<boolean>(true);
   const [minRating, setMinRating] = useState<number>(0);
-  
+
   // Booking Modal State
-  const [selectedArtisanForBooking, setSelectedArtisanForBooking] = useState<Artisan | null>(null);
+  const [selectedArtisanForBooking, setSelectedArtisanForBooking] = useState<ArtisanWithDistance | null>(null);
   const [serviceDescription, setServiceDescription] = useState<string>('');
   const [preferredDate, setPreferredDate] = useState<string>('2026-08-19');
   const [preferredTime, setPreferredTime] = useState<string>('10:00 AM');
   const [pricingType, setPricingType] = useState<PricingType>('fixed_rate');
   const [estimatedHours, setEstimatedHours] = useState<number>(2);
 
+  // Distance is computed from the resident's real device location when granted,
+  // falling back to their registered estate's coordinates otherwise.
+  const distanceOrigin = userLocation || selectedEstate;
+
   // Filtered & Proximity Sorted Artisans
-  const filteredArtisans = useMemo(() => {
+  const filteredArtisans = useMemo((): ArtisanWithDistance[] => {
     return artisans
       .filter(artisan => {
         if (activeCategory !== 'all' && artisan.category !== activeCategory) {
@@ -77,13 +88,25 @@ export const ResidentDirectoryPage: React.FC = () => {
         }
         return true;
       })
+      .map(artisan => ({
+        ...artisan,
+        distanceKm: haversineKm(distanceOrigin.lat, distanceOrigin.lng, artisan.lat, artisan.lng),
+      }))
       .sort((a, b) => a.distanceKm - b.distanceKm);
-  }, [artisans, activeCategory, onlyVerified, minRating, searchQuery]);
+  }, [artisans, activeCategory, onlyVerified, minRating, searchQuery, distanceOrigin]);
 
-  const handleOpenBookingModal = (artisan: Artisan) => {
+  const [paymentError, setPaymentError] = useState<string>('');
+  const [isPaying, setIsPaying] = useState<boolean>(false);
+
+  const handleOpenBookingModal = (artisan: ArtisanWithDistance) => {
+    if (!userSession) {
+      navigate('/login');
+      return;
+    }
     setSelectedArtisanForBooking(artisan);
     setServiceDescription('');
     setPricingType('fixed_rate');
+    setPaymentError('');
   };
 
   const handleConfirmBookingWithPaystack = (e: React.FormEvent) => {
@@ -94,7 +117,10 @@ export const ResidentDirectoryPage: React.FC = () => {
       ? (selectedArtisanForBooking.inspectionFee || 3000)
       : (selectedArtisanForBooking.hourlyRate * estimatedHours);
 
-    const email = userSession?.email || 'folake.kuti@example.ng';
+    const email = userSession?.email || `${(userSession?.phone || 'resident').replace(/\D/g, '')}@artiva.ng`;
+
+    setPaymentError('');
+    setIsPaying(true);
 
     // Trigger Paystack Inline NGN Payment Pop-up
     triggerPaystackEscrowPayment(
@@ -107,6 +133,7 @@ export const ResidentDirectoryPage: React.FC = () => {
       },
       (reference) => {
         // Callback on Paystack payment success
+        setIsPaying(false);
         const booking = createBooking(
           selectedArtisanForBooking.id,
           serviceDescription,
@@ -118,6 +145,11 @@ export const ResidentDirectoryPage: React.FC = () => {
 
         setSelectedArtisanForBooking(null);
         navigate(`/bookings/${booking.id}`);
+      },
+      () => setIsPaying(false),
+      (message) => {
+        setIsPaying(false);
+        setPaymentError(message);
       }
     );
   };
@@ -136,13 +168,40 @@ export const ResidentDirectoryPage: React.FC = () => {
               </h1>
             </div>
             <p className="text-xs sm:text-sm text-slate-500">
-              Showing verified local professionals sorted nearest-first for quick response time.
+              {userLocation
+                ? 'Sorted nearest-first using your current device location.'
+                : `Sorted nearest-first from ${selectedEstate.name}. Share your location for exact distances.`}
             </p>
           </div>
 
-          <div className="flex items-center gap-2 bg-artiva-teal-light px-3.5 py-2 rounded-artiva border border-artiva-teal/20 text-xs font-bold text-artiva-teal-dark shrink-0">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 animate-badge-pulse" />
-            <span>Paystack Escrow Protected • Zero Cash Risk</span>
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <div className="flex items-center gap-2 bg-artiva-teal-light px-3.5 py-2 rounded-artiva border border-artiva-teal/20 text-xs font-bold text-artiva-teal-dark">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 animate-badge-pulse" />
+              <span>Paystack Escrow Protected • Zero Cash Risk</span>
+            </div>
+            <button
+              type="button"
+              onClick={requestUserLocation}
+              disabled={locationStatus === 'requesting'}
+              className="flex items-center gap-1.5 text-[11px] font-bold text-artiva-teal hover:text-artiva-teal-dark disabled:opacity-60"
+            >
+              {locationStatus === 'requesting' ? (
+                <LoaderCircle className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <LocateFixed className="w-3.5 h-3.5" />
+              )}
+              {userLocation ? 'Update my location' : 'Use my current location'}
+            </button>
+            {locationStatus === 'denied' && (
+              <p className="text-[10px] text-rose-500 max-w-[220px] text-right">
+                Location access denied — showing distance from {selectedEstate.name} instead.
+              </p>
+            )}
+            {locationStatus === 'unsupported' && (
+              <p className="text-[10px] text-rose-500 max-w-[220px] text-right">
+                Location isn't supported on this device/browser.
+              </p>
+            )}
           </div>
         </div>
 
@@ -321,13 +380,20 @@ export const ResidentDirectoryPage: React.FC = () => {
               </div>
             </div>
 
+            {paymentError && (
+              <div className="p-3 bg-rose-50 rounded-artiva border border-rose-200 text-xs text-rose-700 font-semibold flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{paymentError}</span>
+              </div>
+            )}
+
             {/* Submit */}
             <div className="flex items-center justify-end gap-2 pt-2">
               <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedArtisanForBooking(null)}>
                 Cancel
               </Button>
-              <Button type="submit" variant="gold" size="md" icon={<CreditCard className="w-4 h-4 text-slate-900" />}>
-                Pay via Paystack & Lock Escrow
+              <Button type="submit" variant="gold" size="md" disabled={isPaying} icon={<CreditCard className="w-4 h-4 text-slate-900" />}>
+                {isPaying ? 'Opening Paystack…' : 'Pay via Paystack & Lock Escrow'}
               </Button>
             </div>
 

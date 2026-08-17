@@ -3,7 +3,7 @@ import { Booking } from '../../types';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Input';
-import { AlertCircle, Upload, Image, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, Upload, ShieldAlert } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 
 interface DisputeModalProps {
@@ -21,10 +21,15 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({
 }) => {
   const [reason, setReason] = useState<string>('Incomplete Service');
   const [description, setDescription] = useState<string>('');
-  const [photoUrl, setPhotoUrl] = useState<string>('https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=600&q=80');
+  const [photoUrl, setPhotoUrl] = useState<string>('');
   const [error, setError] = useState<string>('');
 
   if (!booking) return null;
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setPhotoUrl(URL.createObjectURL(file));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +38,7 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({
       return;
     }
 
-    onSubmitDispute(booking.id, reason, description, photoUrl);
+    onSubmitDispute(booking.id, reason, description, photoUrl || undefined);
     onClose();
   };
 
@@ -89,7 +94,7 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({
           {error && <p className="text-xs text-rose-600 font-medium">{error}</p>}
         </div>
 
-        {/* Photo Evidence Upload Mock */}
+        {/* Photo Evidence Upload */}
         <div className="space-y-1.5">
           <label className="block text-sm font-semibold text-slate-700">
             Photo Evidence (Optional but Recommended)
@@ -111,17 +116,11 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({
                 </button>
               </div>
             ) : (
-              <div className="space-y-2">
+              <label className="block space-y-2 cursor-pointer">
+                <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
                 <Upload className="w-8 h-8 text-slate-400 mx-auto" />
                 <p className="text-xs text-slate-600">Click to upload photo evidence (JPG, PNG)</p>
-                <button
-                  type="button"
-                  onClick={() => setPhotoUrl('https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=600&q=80')}
-                  className="text-xs text-artiva-teal hover:underline font-bold"
-                >
-                  Attach Sample Inspection Photo
-                </button>
-              </div>
+              </label>
             )}
           </div>
         </div>

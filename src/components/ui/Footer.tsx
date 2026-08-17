@@ -1,7 +1,10 @@
 import React from 'react';
 import { ShieldCheck, Lock, CheckCircle, PhoneCall, Award } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
 
 export const Footer: React.FC = () => {
+  const { navigate } = useApp();
+
   return (
     <footer className="bg-slate-900 text-slate-400 text-xs border-t border-slate-800 mt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -68,9 +71,8 @@ export const Footer: React.FC = () => {
         <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
           <p>© {new Date().getFullYear()} Artiva (formerly Verfix). Built for Nigerian Residential Estates.</p>
           <div className="flex items-center gap-4">
-            <span className="hover:text-slate-300 transition-colors">Terms of Service</span>
-            <span className="hover:text-slate-300 transition-colors">Privacy Policy</span>
-            <span className="hover:text-slate-300 transition-colors">Artisan Guidelines</span>
+            <button onClick={() => navigate('/terms')} className="hover:text-slate-300 transition-colors">Terms of Service</button>
+            <button onClick={() => navigate('/privacy')} className="hover:text-slate-300 transition-colors">Privacy Policy</button>
           </div>
         </div>
       </div>

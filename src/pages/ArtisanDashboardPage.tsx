@@ -16,18 +16,31 @@ import {
 } from 'lucide-react';
 
 export const ArtisanDashboardPage: React.FC = () => {
-  const { 
-    artisans, 
-    bookings, 
-    acceptBooking, 
-    declineBooking, 
-    startJob, 
+  const {
+    artisans,
+    bookings,
+    userSession,
+    navigate,
+    acceptBooking,
+    declineBooking,
+    startJob,
     completeJobByArtisan,
     confirmJobByResident
   } = useApp();
 
-  // Selected demo artisan
-  const currentArtisan = artisans[0]; // Emeka Okonkwo
+  const currentArtisan = artisans.find(a => a.id === userSession?.id);
+
+  if (!currentArtisan) {
+    return (
+      <div className="max-w-md mx-auto py-16 text-center space-y-4">
+        <h2 className="text-xl font-bold text-slate-900 font-heading">No Artisan Profile Yet</h2>
+        <p className="text-xs text-slate-500">Sign in as an artisan and submit your verification application to see your dashboard here.</p>
+        <Button variant="primary" size="md" onClick={() => navigate(userSession ? '/verification' : '/login')}>
+          {userSession ? 'Complete Verification' : 'Sign In'}
+        </Button>
+      </div>
+    );
+  }
 
   const artisanBookings = bookings.filter(b => b.artisanId === currentArtisan.id || b.artisanName === currentArtisan.name);
   const pendingRequests = artisanBookings.filter(b => b.status === 'requested');

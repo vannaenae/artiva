@@ -5,29 +5,34 @@ import { RatingStars } from '../components/ui/RatingStars';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
-import { formatCurrency, formatDistance } from '../lib/utils';
+import { formatCurrency, formatDistance, haversineKm } from '../lib/utils';
+import { triggerPaystackEscrowPayment } from '../lib/paystack';
 import { PricingType } from '../types';
-import { 
-  MapPin, 
-  ShieldCheck, 
-  Calendar, 
-  Clock, 
-  CheckCircle2, 
-  MessageSquare, 
-  Award, 
-  Phone, 
+import {
+  MapPin,
+  ShieldCheck,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  MessageSquare,
+  Award,
+  Phone,
   Mail,
   Lock,
   ArrowLeft,
-  Eye
+  Eye,
+  AlertCircle,
+  CreditCard
 } from 'lucide-react';
 
 export const ArtisanProfilePage: React.FC = () => {
-  const { currentPath, navigate, artisans, createBooking } = useApp();
+  const { currentPath, navigate, artisans, userSession, selectedEstate, userLocation, createBooking } = useApp();
 
   // Extract artisan ID from route hash e.g. /artisan/art-1
-  const artisanId = currentPath.split('/artisan/')[1] || 'art-1';
-  const artisan = artisans.find(a => a.id === artisanId) || artisans[0];
+  const artisanId = currentPath.split('/artisan/')[1] || '';
+  const artisan = artisans.find(a => a.id === artisanId);
+  const distanceOrigin = userLocation || selectedEstate;
+  const distanceKm = artisan ? haversineKm(distanceOrigin.lat, distanceOrigin.lng, artisan.lat, artisan.lng) : 0;
 
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [serviceDescription, setServiceDescription] = useState('');
@@ -35,27 +40,75 @@ export const ArtisanProfilePage: React.FC = () => {
   const [preferredTime, setPreferredTime] = useState('10:00 AM');
   const [pricingType, setPricingType] = useState<PricingType>('fixed_rate');
   const [estimatedHours, setEstimatedHours] = useState(2);
+  const [paymentError, setPaymentError] = useState('');
+  const [isPaying, setIsPaying] = useState(false);
+
+  const handleOpenBookingModal = () => {
+    if (!userSession) {
+      navigate('/login');
+      return;
+    }
+    setPaymentError('');
+    setIsBookingModalOpen(true);
+  };
 
   const handleCreateBooking = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!serviceDescription.trim()) return;
+    if (!artisan || !serviceDescription.trim() || !userSession) return;
 
-    const booking = createBooking(
-      artisan.id,
-      serviceDescription,
-      preferredDate,
-      preferredTime,
-      pricingType,
-      estimatedHours
+    const amountInNaira = pricingType === 'inspection_first'
+      ? (artisan.inspectionFee || 3000)
+      : (artisan.hourlyRate * estimatedHours);
+
+    const email = userSession.email || `${userSession.phone.replace(/\D/g, '')}@artiva.ng`;
+
+    setPaymentError('');
+    setIsPaying(true);
+
+    triggerPaystackEscrowPayment(
+      email,
+      amountInNaira,
+      { artisanName: artisan.name, estateName: selectedEstate.name, serviceDescription },
+      () => {
+        setIsPaying(false);
+        const booking = createBooking(
+          artisan.id,
+          serviceDescription,
+          preferredDate,
+          preferredTime,
+          pricingType,
+          estimatedHours
+        );
+        setIsBookingModalOpen(false);
+        navigate(`/bookings/${booking.id}`);
+      },
+      () => setIsPaying(false),
+      (message) => {
+        setIsPaying(false);
+        setPaymentError(message);
+      }
     );
-
-    setIsBookingModalOpen(false);
-    navigate(`/bookings/${booking.id}`);
   };
+
+  if (!artisan) {
+    return (
+      <div className="max-w-md mx-auto py-16 text-center space-y-4">
+        <h2 className="text-xl font-bold text-slate-900 font-heading">Artisan Not Found</h2>
+        <p className="text-xs text-slate-500">This artisan profile doesn't exist or is no longer available.</p>
+        <button
+          onClick={() => navigate('/directory')}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-artiva-teal hover:underline"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Artisan Directory
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 py-4 animate-fade-in">
-      
+
       {/* Back to Directory Button */}
       <button
         onClick={() => navigate('/directory')}
@@ -91,7 +144,7 @@ export const ArtisanProfilePage: React.FC = () => {
               <div className="flex items-center gap-2 text-xs text-slate-500 pt-1">
                 <MapPin className="w-4 h-4 text-slate-400" />
                 <span>{artisan.estateName} • </span>
-                <span className="font-bold text-artiva-teal">{formatDistance(artisan.distanceKm)} away</span>
+                <span className="font-bold text-artiva-teal">{formatDistance(distanceKm)} away</span>
               </div>
               <div className="pt-2 flex items-center gap-2">
                 <RatingStars rating={artisan.rating} reviewCount={artisan.reviewCount} />
@@ -116,7 +169,7 @@ export const ArtisanProfilePage: React.FC = () => {
             <Button
               variant="gold"
               size="md"
-              onClick={() => setIsBookingModalOpen(true)}
+              onClick={handleOpenBookingModal}
               className="w-full justify-center"
               icon={<Calendar className="w-4 h-4 text-slate-900" />}
             >
@@ -283,12 +336,19 @@ export const ArtisanProfilePage: React.FC = () => {
               </div>
             </div>
 
+            {paymentError && (
+              <div className="p-3 bg-rose-50 rounded-artiva border border-rose-200 text-xs text-rose-700 font-semibold flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{paymentError}</span>
+              </div>
+            )}
+
             <div className="flex items-center justify-end gap-2 pt-2">
               <Button type="button" variant="ghost" size="sm" onClick={() => setIsBookingModalOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" variant="gold" size="md" icon={<Lock className="w-4 h-4 text-slate-900" />}>
-                Confirm Booking & Hold Escrow
+              <Button type="submit" variant="gold" size="md" disabled={isPaying} icon={<CreditCard className="w-4 h-4 text-slate-900" />}>
+                {isPaying ? 'Opening Paystack…' : 'Pay via Paystack & Lock Escrow'}
               </Button>
             </div>
 
