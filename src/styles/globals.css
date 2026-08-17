@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Artiva Design System Tokens */
+    --font-heading: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+
+    --color-teal-primary: #16858F;
+    --color-teal-hover: #126C74;
+    --color-teal-dark: #0E5B62;
+    --color-teal-light: #E6F4F5;
+    
+    --color-gold: #F59E0B;
+    --color-gold-dark: #D97706;
+    --color-gold-light: #FEF3C7;
+    
+    --color-green: #10B981;
+    --color-green-light: #D1FAE5;
+    
+    --color-slate-dark: #0F172A;
+    --color-surface-bg: #F8FAFC;
+    --color-card-bg: #FFFFFF;
+
+    --shadow-artiva-sm: 0 1px 3px rgba(22, 133, 143, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-artiva-md: 0 4px 12px rgba(22, 133, 143, 0.12), 0 2px 4px rgba(15, 23, 42, 0.06);
+    --shadow-artiva-lg: 0 12px 24px rgba(22, 133, 143, 0.15), 0 4px 8px rgba(15, 23, 42, 0.08);
+
+    --radius-artiva: 12px;
+    --radius-artiva-lg: 16px;
+    --radius-pill: 9999px;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background-color: var(--color-surface-bg);
+    color: var(--color-slate-dark);
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Animations & Micro-Interactions */
+.hover-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-artiva-md);
+}
+
+/* Glassmorphism Panels */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.glass-teal {
+  background: rgba(22, 133, 143, 0.08);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(22, 133, 143, 0.18);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #16858F;
+}
