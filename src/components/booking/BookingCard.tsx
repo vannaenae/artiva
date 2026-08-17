@@ -20,7 +20,11 @@ import {
   RotateCcw,
   Eye,
   FileText,
-  DollarSign
+  DollarSign,
+  KeyRound,
+  PlusCircle,
+  Award,
+  Share2
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -45,12 +49,23 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   onConfirmJob,
   onRaiseDispute,
 }) => {
-  const { submitQuoteProposal, approveQuoteProposal, rejectQuoteProposal } = useApp();
+  const { 
+    submitQuoteProposal, 
+    approveQuoteProposal, 
+    rejectQuoteProposal,
+    requestSupplementalTopUp,
+    approveSupplementalTopUp
+  } = useApp();
   
   // Custom Quote Modal State
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState<boolean>(false);
   const [customQuoteInput, setCustomQuoteInput] = useState<string>('25000');
   const [quoteNotesInput, setQuoteNotesInput] = useState<string>('Includes replacement parts, pipe fittings, and 3 hours labor.');
+
+  // Mid-Job Top-Up Modal State
+  const [isTopUpModalOpen, setIsTopUpModalOpen] = useState<boolean>(false);
+  const [topUpAmountInput, setTopUpAmountInput] = useState<string>('12000');
+  const [topUpNotesInput, setTopUpNotesInput] = useState<string>('Discovered burnt circuit trunking requiring 15m Schneider 6mm heavy duty cable.');
 
   const handleSubmitQuote = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +74,16 @@ export const BookingCard: React.FC<BookingCardProps> = ({
     submitQuoteProposal(booking.id, val, quoteNotesInput);
     setIsQuoteModalOpen(false);
   };
+
+  const handleSubmitTopUp = (e: React.FormEvent) => {
+    e.preventDefault();
+    const val = parseFloat(topUpAmountInput);
+    if (!val || val <= 0) return;
+    requestSupplementalTopUp(booking.id, val, topUpNotesInput);
+    setIsTopUpModalOpen(false);
+  };
+
+  const gateCodeToDisplay = booking.estateGateCode || `${booking.residentEstate.slice(0, 3).toUpperCase()}-4892-PASS`;
 
   return (
     <Card className="space-y-4 hover-lift">
@@ -79,7 +104,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         </span>
       </div>
 
-      {/* Main Details Grid (Responsive) */}
+      {/* Main Details Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
         {/* Artisan / Resident Info */}
@@ -112,6 +137,26 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             </p>
           </div>
 
+          {/* Edge Case 1: Estate Security Access Pass Badge */}
+          {(booking.status === 'accepted' || booking.status === 'in_progress' || booking.status === 'requested') && (
+            <div className="p-3 bg-slate-900 text-white rounded-artiva flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-amber-400 shrink-0" />
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Estate Security Gate Pass</span>
+                  <span className="font-mono text-sm font-extrabold text-amber-300 tracking-wider">{gateCodeToDisplay}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => alert(`Estate Gate Code copied: ${gateCodeToDisplay}`)}
+                className="px-2.5 py-1 rounded bg-slate-800 text-slate-200 text-xs font-bold hover:bg-slate-700 transition-all flex items-center gap-1 shrink-0"
+              >
+                <Share2 className="w-3 h-3" /> Share Code
+              </button>
+            </div>
+          )}
+
           {/* Display Custom Quote Proposal Card if status is quote_pending */}
           {booking.status === 'quote_pending' && booking.customQuoteAmount && (
             <div className="p-3 bg-purple-50 rounded-artiva border border-purple-200 space-y-2 text-xs">
@@ -127,6 +172,26 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               {booking.quoteNotes && (
                 <p className="text-[11px] text-purple-800 italic">
                   Note: "{booking.quoteNotes}"
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Edge Case 2: Display Supplemental Escrow Top-Up Request if supplemental_quote_pending */}
+          {booking.status === 'supplemental_quote_pending' && booking.supplementalAmount && (
+            <div className="p-3 bg-amber-50 rounded-artiva border border-amber-300 space-y-2 text-xs">
+              <div className="flex items-center justify-between font-bold text-amber-900">
+                <span className="flex items-center gap-1.5 font-heading">
+                  <PlusCircle className="w-4 h-4 text-amber-700" />
+                  Mid-Job Supplemental Parts Top-Up Request
+                </span>
+                <span className="text-sm font-extrabold text-amber-900 font-heading">
+                  +{formatCurrency(booking.supplementalAmount)}
+                </span>
+              </div>
+              {booking.supplementalNotes && (
+                <p className="text-[11px] text-amber-800">
+                  Reason: "{booking.supplementalNotes}"
                 </p>
               )}
             </div>
@@ -169,6 +234,28 @@ export const BookingCard: React.FC<BookingCardProps> = ({
 
       </div>
 
+      {/* Edge Case 4: 48-Hour Auto Release Protection Banner for Completed Jobs */}
+      {booking.status === 'completed' && (
+        <div className="p-3 bg-amber-50 rounded-artiva border border-amber-200 text-xs text-amber-900 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-amber-700 shrink-0" />
+            <span>
+              <strong>48-Hour Auto-Release Protection Active</strong>: If no dispute is raised, escrow will auto-release to artisan.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Edge Case 5: 7-Day Workmanship Warranty Badge for Paid Out Jobs */}
+      {booking.status === 'paid_out' && (
+        <div className="p-3 bg-emerald-50 rounded-artiva border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
+          <Award className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>
+            <strong>7-Day Artiva Workmanship Warranty Active</strong>: Artisans commit to a 7-day free callback for any defect.
+          </span>
+        </div>
+      )}
+
       {/* Dual Confirmation Progress Bar */}
       {(booking.status === 'in_progress' || booking.status === 'completed' || booking.status === 'confirmed' || booking.status === 'paid_out') && (
         <div className="p-3 bg-slate-50 rounded-artiva border border-slate-200 space-y-2">
@@ -203,6 +290,30 @@ export const BookingCard: React.FC<BookingCardProps> = ({
 
         <div className="flex flex-wrap items-center gap-2">
           
+          {/* Artisan Mid-Job Extra Parts Top-Up Button */}
+          {currentRole === 'artisan' && booking.status === 'in_progress' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsTopUpModalOpen(true)}
+              icon={<PlusCircle className="w-3.5 h-3.5 text-amber-600" />}
+            >
+              Request Supplemental Parts Top-Up
+            </Button>
+          )}
+
+          {/* Resident Mid-Job Top-Up Approval Button */}
+          {currentRole === 'resident' && booking.status === 'supplemental_quote_pending' && (
+            <Button
+              variant="gold"
+              size="sm"
+              onClick={() => approveSupplementalTopUp(booking.id)}
+              icon={<Lock className="w-3.5 h-3.5 text-slate-900" />}
+            >
+              Approve Top-Up (+{formatCurrency(booking.supplementalAmount || 0)}) & Lock Escrow
+            </Button>
+          )}
+
           {/* Artisan On-Site Inspection Quote Action */}
           {currentRole === 'artisan' && booking.status === 'inspection_requested' && (
             <Button
@@ -334,6 +445,57 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               </Button>
               <Button type="submit" variant="gold" size="md" icon={<FileText className="w-4 h-4 text-slate-900" />}>
                 Send Official Quote to Resident
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Modal for Artisan to request mid-job supplemental escrow top-up */}
+      {isTopUpModalOpen && (
+        <Modal
+          isOpen={true}
+          onClose={() => setIsTopUpModalOpen(false)}
+          title="Request Mid-Job Supplemental Escrow Top-Up"
+        >
+          <form onSubmit={handleSubmitTopUp} className="space-y-4">
+            <p className="text-xs text-slate-600">
+              Discovered additional materials or labor required while working at <strong className="text-slate-900">{booking.residentEstate}</strong>?
+            </p>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-800 font-heading">
+                Additional Escrow Amount Needed (₦):
+              </label>
+              <input
+                type="number"
+                required
+                min={500}
+                value={topUpAmountInput}
+                onChange={(e) => setTopUpAmountInput(e.target.value)}
+                className="w-full text-sm font-bold p-3 rounded-artiva border border-slate-300 focus:ring-2 focus:ring-artiva-teal outline-none"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-800 font-heading">
+                Reason & Material Breakdown:
+              </label>
+              <textarea
+                rows={3}
+                required
+                value={topUpNotesInput}
+                onChange={(e) => setTopUpNotesInput(e.target.value)}
+                className="w-full text-xs p-3 rounded-artiva border border-slate-300 focus:ring-2 focus:ring-artiva-teal outline-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setIsTopUpModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="gold" size="md" icon={<PlusCircle className="w-4 h-4 text-slate-900" />}>
+                Send Top-Up Request to Resident
               </Button>
             </div>
           </form>

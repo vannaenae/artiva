@@ -68,11 +68,16 @@ interface AppContextType {
   submitQuoteProposal: (bookingId: string, customAmount: number, quoteNotes: string) => void;
   approveQuoteProposal: (bookingId: string) => void;
   rejectQuoteProposal: (bookingId: string) => void;
+  
+  // Edge Case 2: Mid-Job Supplemental Escrow Top-Up Actions
+  requestSupplementalTopUp: (bookingId: string, amount: number, notes: string) => void;
+  approveSupplementalTopUp: (bookingId: string) => void;
+
   startJob: (bookingId: string) => void;
   completeJobByArtisan: (bookingId: string) => void;
   confirmJobByResident: (bookingId: string) => void;
   
-  // Both Sides of Dispute Story
+  // Disputes
   disputes: Dispute[];
   createDispute: (bookingId: string, reason: string, description: string, evidencePhotoUrl?: string) => void;
   submitDisputeCounterStatement: (disputeId: string, counterStatement: string, counterEvidenceUrl?: string) => void;
@@ -297,6 +302,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const artisan = artisans.find(a => a.id === artisanId);
     const inspFee = artisan?.inspectionFee || 3000;
     const amount = pricingType === 'inspection_first' ? inspFee : (artisan?.hourlyRate || 8500) * estimatedHours;
+    
+    // Generate Estate Security Gate Code e.g. LKK-8492-PASS
+    const gateCode = `${selectedEstate.name.slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}-PASS`;
 
     const newBooking: Booking = {
       id: `bk-${Date.now().toString().slice(-4)}`,
@@ -313,6 +321,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       preferredTime: time,
       pricingType,
       inspectionFee: inspFee,
+      estateGateCode: gateCode,
+      beforeWorkPhotoUrl: artisan?.photoUrl,
       totalAmount: amount,
       escrowStatus: 'held',
       status: pricingType === 'inspection_first' ? 'inspection_requested' : 'requested',
@@ -370,6 +380,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
+  // Edge Case 2: Artisan requests mid-job supplemental escrow top-up
+  const requestSupplementalTopUp = (bookingId: string, amount: number, notes: string) => {
+    setBookings(prev => prev.map(b => {
+      if (b.id === bookingId) {
+        return {
+          ...b,
+          supplementalAmount: amount,
+          supplementalNotes: notes,
+          status: 'supplemental_quote_pending',
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return b;
+    }));
+  };
+
+  const approveSupplementalTopUp = (bookingId: string) => {
+    setBookings(prev => prev.map(b => {
+      if (b.id === bookingId) {
+        const extra = b.supplementalAmount || 0;
+        return {
+          ...b,
+          totalAmount: b.totalAmount + extra,
+          status: 'in_progress',
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return b;
+    }));
+  };
+
   const acceptBooking = (bookingId: string) => {
     setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'accepted', updatedAt: new Date().toISOString() } : b));
   };
@@ -383,6 +424,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const completeJobByArtisan = (bookingId: string) => {
+    // 48-Hour Auto Release Date calculation
+    const autoRelease = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
+
     setBookings(prev => prev.map(b => {
       if (b.id === bookingId) {
         const nextArtisanConfirmed = true;
@@ -390,6 +434,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return {
           ...b,
           artisanConfirmed: true,
+          autoReleaseDate: autoRelease,
           status: fullyConfirmed ? 'confirmed' : 'completed',
           escrowStatus: fullyConfirmed ? 'released' : 'held',
           updatedAt: new Date().toISOString()
@@ -435,7 +480,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       reason,
       description,
       evidencePhotoUrl: evidencePhotoUrl || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=600&q=80',
-      status: 'awaiting_counter_statement', // Awaiting the other party's side of the story!
+      status: 'awaiting_counter_statement',
       createdAt: new Date().toISOString(),
     };
 
@@ -449,7 +494,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } : b));
   };
 
-  // Submit Counter-Statement for the other side of the story
   const submitDisputeCounterStatement = (disputeId: string, counterStatement: string, counterEvidenceUrl?: string) => {
     setDisputes(prev => prev.map(d => {
       if (d.id === disputeId) {
@@ -458,7 +502,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           counterStatement,
           counterEvidencePhotoUrl: counterEvidenceUrl || d.evidencePhotoUrl,
           counterSubmittedAt: new Date().toISOString(),
-          status: 'under_review', // Both sides of the story submitted -> Ready for admin adjudication!
+          status: 'under_review',
         };
       }
       return d;
@@ -519,6 +563,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       submitQuoteProposal,
       approveQuoteProposal,
       rejectQuoteProposal,
+      requestSupplementalTopUp,
+      approveSupplementalTopUp,
       startJob,
       completeJobByArtisan,
       confirmJobByResident,

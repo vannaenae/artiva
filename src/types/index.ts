@@ -74,6 +74,7 @@ export type BookingStatus =
   | 'accepted' 
   | 'declined' 
   | 'in_progress' 
+  | 'supplemental_quote_pending' // Mid-job extra parts escrow top-up request
   | 'completed' 
   | 'confirmed' 
   | 'paid_out'
@@ -98,6 +99,20 @@ export interface Booking {
   inspectionFee: number;
   customQuoteAmount?: number;
   quoteNotes?: string;
+  
+  // Edge Case 1: Estate Security Access Pass
+  estateGateCode?: string;
+  
+  // Edge Case 2: Mid-Job Supplemental Escrow Top-Up
+  supplementalAmount?: number;
+  supplementalNotes?: string;
+  
+  // Edge Case 3: Pre-Work Photo Inspection Log
+  beforeWorkPhotoUrl?: string;
+  
+  // Edge Case 4: Auto-Release Timer
+  autoReleaseDate?: string;
+  
   totalAmount: number;
   escrowStatus: EscrowStatus;
   status: BookingStatus;
@@ -121,7 +136,7 @@ export interface Dispute {
   description: string;
   evidencePhotoUrl?: string;
   
-  // Both Sides of the Story: Counter-Statement
+  // Both Sides of the Story
   counterStatement?: string;
   counterEvidencePhotoUrl?: string;
   counterSubmittedAt?: string;
