@@ -39,7 +39,7 @@ if (isFirebaseConfigured) {
     auth = null;
   }
 } else {
-  console.info('[Artiva Auth] Environment variables missing or placeholder. Running in Demo Auth Mode.');
+  console.info('[Artiva Auth] Firebase environment variables are not set — phone-auth helpers below are no-ops until they are configured.');
 }
 
 export { app, auth };

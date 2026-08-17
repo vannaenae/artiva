@@ -21,7 +21,15 @@ import {
 } from 'lucide-react';
 
 export const DisputesPage: React.FC = () => {
-  const { disputes, currentRole, resolveDispute, submitDisputeCounterStatement, navigate } = useApp();
+  const { disputes, currentRole, userSession, resolveDispute, submitDisputeCounterStatement, navigate } = useApp();
+
+  // Residents and artisans only see disputes they're party to. Admins get
+  // full oversight to adjudicate.
+  const myDisputes = disputes.filter((d) => {
+    if (currentRole === 'resident') return d.residentId === userSession?.id;
+    if (currentRole === 'artisan') return d.artisanId === userSession?.id;
+    return true;
+  });
 
   // Counter-Statement Modal State
   const [selectedDisputeForCounter, setSelectedDisputeForCounter] = useState<Dispute | null>(null);
@@ -76,9 +84,9 @@ export const DisputesPage: React.FC = () => {
       </div>
 
       {/* Disputes List */}
-      {disputes.length > 0 ? (
+      {myDisputes.length > 0 ? (
         <div className="space-y-6">
-          {disputes.map(dispute => {
+          {myDisputes.map(dispute => {
             const isWaitingForCounter = dispute.status === 'awaiting_counter_statement';
             const isReadyForAdmin = dispute.status === 'under_review';
             const isResolved = dispute.status === 'resolved';

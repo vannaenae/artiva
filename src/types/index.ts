@@ -17,6 +17,8 @@ export interface Estate {
   lga: string;
   state: string;
   address: string;
+  lat: number;
+  lng: number;
 }
 
 export interface CustomerReview {
@@ -37,7 +39,8 @@ export interface Artisan {
   categoryLabel: string;
   estateId: string;
   estateName: string;
-  distanceKm: number;
+  lat: number;
+  lng: number;
   rating: number;
   reviewCount: number;
   hourlyRate: number;

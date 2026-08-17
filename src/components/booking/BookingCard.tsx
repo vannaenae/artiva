@@ -4,7 +4,7 @@ import { Card } from '../ui/Card';
 import { StatusPill, EscrowBadge } from '../ui/StatusPill';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
-import { formatCurrency, formatDate } from '../../lib/utils';
+import { formatCurrency, formatDate, DEFAULT_AVATAR } from '../../lib/utils';
 import { 
   Calendar, 
   Clock, 
@@ -59,13 +59,13 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   
   // Custom Quote Modal State
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState<boolean>(false);
-  const [customQuoteInput, setCustomQuoteInput] = useState<string>('25000');
-  const [quoteNotesInput, setQuoteNotesInput] = useState<string>('Includes replacement parts, pipe fittings, and 3 hours labor.');
+  const [customQuoteInput, setCustomQuoteInput] = useState<string>('');
+  const [quoteNotesInput, setQuoteNotesInput] = useState<string>('');
 
   // Mid-Job Top-Up Modal State
   const [isTopUpModalOpen, setIsTopUpModalOpen] = useState<boolean>(false);
-  const [topUpAmountInput, setTopUpAmountInput] = useState<string>('12000');
-  const [topUpNotesInput, setTopUpNotesInput] = useState<string>('Discovered burnt circuit trunking requiring 15m Schneider 6mm heavy duty cable.');
+  const [topUpAmountInput, setTopUpAmountInput] = useState<string>('');
+  const [topUpNotesInput, setTopUpNotesInput] = useState<string>('');
 
   const handleSubmitQuote = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +84,17 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   };
 
   const gateCodeToDisplay = booking.estateGateCode || `${booking.residentEstate.slice(0, 3).toUpperCase()}-4892-PASS`;
+  const [gateCodeCopied, setGateCodeCopied] = useState(false);
+
+  const handleCopyGateCode = async () => {
+    try {
+      await navigator.clipboard.writeText(gateCodeToDisplay);
+      setGateCodeCopied(true);
+      setTimeout(() => setGateCodeCopied(false), 2000);
+    } catch {
+      window.prompt('Copy the gate code:', gateCodeToDisplay);
+    }
+  };
 
   return (
     <Card className="space-y-4 hover-lift">
@@ -111,7 +122,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         <div className="md:col-span-2 space-y-2">
           <div className="flex items-center gap-3">
             <img
-              src={booking.artisanPhotoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80'}
+              src={booking.artisanPhotoUrl || DEFAULT_AVATAR}
               alt={booking.artisanName}
               className="w-12 h-12 rounded-full object-cover border border-slate-200"
             />
@@ -149,10 +160,10 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               </div>
               <button
                 type="button"
-                onClick={() => alert(`Estate Gate Code copied: ${gateCodeToDisplay}`)}
+                onClick={handleCopyGateCode}
                 className="px-2.5 py-1 rounded bg-slate-800 text-slate-200 text-xs font-bold hover:bg-slate-700 transition-all flex items-center gap-1 shrink-0"
               >
-                <Share2 className="w-3 h-3" /> Share Code
+                <Share2 className="w-3 h-3" /> {gateCodeCopied ? 'Copied!' : 'Share Code'}
               </button>
             </div>
           )}

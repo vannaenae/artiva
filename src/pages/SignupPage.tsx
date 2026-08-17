@@ -10,7 +10,8 @@ export const SignupPage: React.FC = () => {
   const { signupResident, signupArtisan, navigate, selectedEstate } = useApp();
 
   const [signupType, setSignupType] = useState<'resident' | 'artisan'>('resident');
-  
+  const [agreedToTerms, setAgreedToTerms] = useState<boolean>(false);
+
   // Resident fields
   const [resName, setResName] = useState<string>('');
   const [resPhone, setResPhone] = useState<string>('');
@@ -122,7 +123,9 @@ export const SignupPage: React.FC = () => {
               options={ESTATES.map(e => ({ value: e.id, label: `${e.name} (${e.lga})` }))}
             />
 
-            <Button type="submit" variant="primary" fullWidth size="lg">
+            <TermsConsentCheckbox checked={agreedToTerms} onChange={setAgreedToTerms} navigate={navigate} />
+
+            <Button type="submit" variant="primary" fullWidth size="lg" disabled={!agreedToTerms}>
               Complete Resident Registration
             </Button>
           </form>
@@ -191,7 +194,9 @@ export const SignupPage: React.FC = () => {
               <span>NIN Identity Document upload will be requested on your Verification Portal.</span>
             </div>
 
-            <Button type="submit" variant="gold" fullWidth size="lg">
+            <TermsConsentCheckbox checked={agreedToTerms} onChange={setAgreedToTerms} navigate={navigate} />
+
+            <Button type="submit" variant="gold" fullWidth size="lg" disabled={!agreedToTerms}>
               Submit Artisan Profile for Verification
             </Button>
           </form>
@@ -209,3 +214,29 @@ export const SignupPage: React.FC = () => {
     </div>
   );
 };
+
+const TermsConsentCheckbox: React.FC<{
+  checked: boolean;
+  onChange: (val: boolean) => void;
+  navigate: (path: string) => void;
+}> = ({ checked, onChange, navigate }) => (
+  <label className="flex items-start gap-2 text-xs text-slate-600">
+    <input
+      type="checkbox"
+      required
+      checked={checked}
+      onChange={(e) => onChange(e.target.checked)}
+      className="mt-0.5 rounded border-slate-300 text-artiva-teal focus:ring-artiva-teal"
+    />
+    <span>
+      I agree to Artiva's{' '}
+      <button type="button" onClick={() => navigate('/terms')} className="font-bold text-artiva-teal hover:underline">
+        Terms of Service
+      </button>{' '}
+      and{' '}
+      <button type="button" onClick={() => navigate('/privacy')} className="font-bold text-artiva-teal hover:underline">
+        Privacy Policy
+      </button>.
+    </span>
+  </label>
+);

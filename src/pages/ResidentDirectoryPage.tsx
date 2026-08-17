@@ -6,66 +6,76 @@ import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Artisan, PricingType } from '../types';
-import { formatCurrency, formatDistance } from '../lib/utils';
-import { 
-  Search, 
-  MapPin, 
-  ShieldCheck, 
-  Wrench, 
-  Zap, 
-  Sparkles, 
-  Wind, 
-  Tv, 
-  Hammer, 
-  Paintbrush, 
-  Calendar, 
-  Clock, 
-  Lock, 
+import { formatCurrency, formatDistance, haversineKm } from '../lib/utils';
+import { triggerPaystackEscrowPayment } from '../lib/paystack';
+import {
+  Search,
+  MapPin,
+  ShieldCheck,
+  Wrench,
+  Zap,
+  Sparkles,
+  Wind,
+  Tv,
+  Hammer,
+  Paintbrush,
+  Calendar,
+  Clock,
+  Lock,
   AlertCircle,
   Eye,
-  CheckCircle2
+  CheckCircle2,
+  CreditCard,
+  LocateFixed,
+  LoaderCircle
 } from 'lucide-react';
 
+type ArtisanWithDistance = Artisan & { distanceKm: number };
+
 export const ResidentDirectoryPage: React.FC = () => {
-  const { 
-    artisans, 
-    selectedEstate, 
-    activeCategory, 
-    setActiveCategory, 
-    searchQuery, 
+  const {
+    artisans,
+    selectedEstate,
+    activeCategory,
+    setActiveCategory,
+    searchQuery,
     setSearchQuery,
+    userSession,
     navigate,
-    createBooking 
+    createBooking,
+    userLocation,
+    locationStatus,
+    requestUserLocation,
   } = useApp();
 
   const [onlyVerified, setOnlyVerified] = useState<boolean>(true);
   const [minRating, setMinRating] = useState<number>(0);
-  
+
   // Booking Modal State
-  const [selectedArtisanForBooking, setSelectedArtisanForBooking] = useState<Artisan | null>(null);
+  const [selectedArtisanForBooking, setSelectedArtisanForBooking] = useState<ArtisanWithDistance | null>(null);
   const [serviceDescription, setServiceDescription] = useState<string>('');
   const [preferredDate, setPreferredDate] = useState<string>('2026-08-19');
   const [preferredTime, setPreferredTime] = useState<string>('10:00 AM');
   const [pricingType, setPricingType] = useState<PricingType>('fixed_rate');
   const [estimatedHours, setEstimatedHours] = useState<number>(2);
 
+  // Distance is computed from the resident's real device location when granted,
+  // falling back to their registered estate's coordinates otherwise.
+  const distanceOrigin = userLocation || selectedEstate;
+
   // Filtered & Proximity Sorted Artisans
-  const filteredArtisans = useMemo(() => {
+  const filteredArtisans = useMemo((): ArtisanWithDistance[] => {
     return artisans
       .filter(artisan => {
-        // Category filter
         if (activeCategory !== 'all' && artisan.category !== activeCategory) {
           return false;
         }
-        // Verified filter
         if (onlyVerified && artisan.verificationStatus !== 'verified') {
           return false;
         }
-        // Rating filter
         if (minRating > 0 && artisan.rating < minRating) {
           return false;
         }
-        // Search query
         if (searchQuery.trim() !== '') {
           const q = searchQuery.toLowerCase();
           const matchesName = artisan.name.toLowerCase().includes(q);
@@ -78,31 +88,70 @@ export const ResidentDirectoryPage: React.FC = () => {
         }
         return true;
       })
-      // Nearest First Proximity Sort
+      .map(artisan => ({
+        ...artisan,
+        distanceKm: haversineKm(distanceOrigin.lat, distanceOrigin.lng, artisan.lat, artisan.lng),
+      }))
       .sort((a, b) => a.distanceKm - b.distanceKm);
-  }, [artisans, activeCategory, onlyVerified, minRating, searchQuery]);
+  }, [artisans, activeCategory, onlyVerified, minRating, searchQuery, distanceOrigin]);
 
-  const handleOpenBookingModal = (artisan: Artisan) => {
+  const [paymentError, setPaymentError] = useState<string>('');
+  const [isPaying, setIsPaying] = useState<boolean>(false);
+
+  const handleOpenBookingModal = (artisan: ArtisanWithDistance) => {
+    if (!userSession) {
+      navigate('/login');
+      return;
+    }
     setSelectedArtisanForBooking(artisan);
     setServiceDescription('');
     setPricingType('fixed_rate');
+    setPaymentError('');
   };
 
-  const handleConfirmBooking = (e: React.FormEvent) => {
+  const handleConfirmBookingWithPaystack = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedArtisanForBooking || !serviceDescription.trim()) return;
 
-    const booking = createBooking(
-      selectedArtisanForBooking.id,
-      serviceDescription,
-      preferredDate,
-      preferredTime,
-      pricingType,
-      estimatedHours
-    );
+    const amountInNaira = pricingType === 'inspection_first'
+      ? (selectedArtisanForBooking.inspectionFee || 3000)
+      : (selectedArtisanForBooking.hourlyRate * estimatedHours);
 
-    setSelectedArtisanForBooking(null);
-    navigate(`/bookings/${booking.id}`);
+    const email = userSession?.email || `${(userSession?.phone || 'resident').replace(/\D/g, '')}@artiva.ng`;
+
+    setPaymentError('');
+    setIsPaying(true);
+
+    // Trigger Paystack Inline NGN Payment Pop-up
+    triggerPaystackEscrowPayment(
+      email,
+      amountInNaira,
+      {
+        artisanName: selectedArtisanForBooking.name,
+        estateName: selectedEstate.name,
+        serviceDescription,
+      },
+      (reference) => {
+        // Callback on Paystack payment success
+        setIsPaying(false);
+        const booking = createBooking(
+          selectedArtisanForBooking.id,
+          serviceDescription,
+          preferredDate,
+          preferredTime,
+          pricingType,
+          estimatedHours
+        );
+
+        setSelectedArtisanForBooking(null);
+        navigate(`/bookings/${booking.id}`);
+      },
+      () => setIsPaying(false),
+      (message) => {
+        setIsPaying(false);
+        setPaymentError(message);
+      }
+    );
   };
 
   return (
@@ -119,13 +168,40 @@ export const ResidentDirectoryPage: React.FC = () => {
               </h1>
             </div>
             <p className="text-xs sm:text-sm text-slate-500">
-              Showing verified local professionals sorted nearest-first for quick response time.
+              {userLocation
+                ? 'Sorted nearest-first using your current device location.'
+                : `Sorted nearest-first from ${selectedEstate.name}. Share your location for exact distances.`}
             </p>
           </div>
 
-          <div className="flex items-center gap-2 bg-artiva-teal-light px-3.5 py-2 rounded-artiva border border-artiva-teal/20 text-xs font-bold text-artiva-teal-dark shrink-0">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 animate-badge-pulse" />
-            <span>Escrow Protected • Zero Cash Risk</span>
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <div className="flex items-center gap-2 bg-artiva-teal-light px-3.5 py-2 rounded-artiva border border-artiva-teal/20 text-xs font-bold text-artiva-teal-dark">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 animate-badge-pulse" />
+              <span>Paystack Escrow Protected • Zero Cash Risk</span>
+            </div>
+            <button
+              type="button"
+              onClick={requestUserLocation}
+              disabled={locationStatus === 'requesting'}
+              className="flex items-center gap-1.5 text-[11px] font-bold text-artiva-teal hover:text-artiva-teal-dark disabled:opacity-60"
+            >
+              {locationStatus === 'requesting' ? (
+                <LoaderCircle className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <LocateFixed className="w-3.5 h-3.5" />
+              )}
+              {userLocation ? 'Update my location' : 'Use my current location'}
+            </button>
+            {locationStatus === 'denied' && (
+              <p className="text-[10px] text-rose-500 max-w-[220px] text-right">
+                Location access denied — showing distance from {selectedEstate.name} instead.
+              </p>
+            )}
+            {locationStatus === 'unsupported' && (
+              <p className="text-[10px] text-rose-500 max-w-[220px] text-right">
+                Location isn't supported on this device/browser.
+              </p>
+            )}
           </div>
         </div>
 
@@ -142,7 +218,7 @@ export const ResidentDirectoryPage: React.FC = () => {
         />
       </div>
 
-      {/* Artisans Grid (Mobile 1-col, Tablet 2-col, Desktop 3-col) */}
+      {/* Artisans Grid */}
       {filteredArtisans.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredArtisans.map(artisan => (
@@ -173,14 +249,14 @@ export const ResidentDirectoryPage: React.FC = () => {
         </div>
       )}
 
-      {/* Booking Request Modal with Fixed vs On-Site Inspection Edge Case */}
+      {/* Booking Modal with Paystack Gateway */}
       {selectedArtisanForBooking && (
         <Modal
           isOpen={true}
           onClose={() => setSelectedArtisanForBooking(null)}
           title={`Book ${selectedArtisanForBooking.name}`}
         >
-          <form onSubmit={handleConfirmBooking} className="space-y-4">
+          <form onSubmit={handleConfirmBookingWithPaystack} className="space-y-4">
             
             <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-artiva border border-slate-200">
               <img
@@ -197,7 +273,7 @@ export const ResidentDirectoryPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Edge Case Choice: Pricing Structure */}
+            {/* Pricing Structure */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-800 font-heading block">
                 Select Pricing Model for this Job:
@@ -248,7 +324,7 @@ export const ResidentDirectoryPage: React.FC = () => {
                     How On-Site Inspection Works:
                   </div>
                   <p className="text-[11px] text-amber-800 leading-relaxed">
-                    The artisan will visit your home at your scheduled date/time to inspect the work. You lock a small diagnosis fee ({formatCurrency(selectedArtisanForBooking.inspectionFee || 3000)}) in escrow. After inspecting, the artisan submits an official quote proposal which you can approve or decline before work begins.
+                    The artisan will visit your home at your scheduled date/time to inspect the work. You lock a small diagnosis fee ({formatCurrency(selectedArtisanForBooking.inspectionFee || 3000)}) in Paystack escrow. After inspecting, the artisan submits an official quote proposal for your approval.
                   </p>
                 </div>
               )}
@@ -265,7 +341,7 @@ export const ResidentDirectoryPage: React.FC = () => {
                 value={serviceDescription}
                 onChange={(e) => setServiceDescription(e.target.value)}
                 placeholder="e.g. Pressure pump leaking water near generator room, hidden dampness behind kitchen tiles..."
-                className="w-full text-xs p-3 rounded-artiva border border-slate-300 focus:ring-2 focus:ring-artiva-teal focus:border-artiva-teal outline-none"
+                className="w-full text-xs p-3 rounded-artiva border border-slate-300 focus:ring-2 focus:ring-artiva-teal outline-none"
               />
             </div>
 
@@ -287,10 +363,10 @@ export const ResidentDirectoryPage: React.FC = () => {
               />
             </div>
 
-            {/* Escrow Deposit Summary */}
+            {/* Paystack Escrow Summary */}
             <div className="p-3 bg-slate-900 text-white rounded-artiva flex items-center justify-between text-xs">
               <div>
-                <span className="text-slate-400 text-[10px] uppercase font-bold block">Initial Escrow Hold</span>
+                <span className="text-slate-400 text-[10px] uppercase font-bold block">Paystack Escrow Hold</span>
                 <span className="font-extrabold text-sm text-amber-300 font-heading">
                   {pricingType === 'inspection_first'
                     ? formatCurrency(selectedArtisanForBooking.inspectionFee || 3000)
@@ -299,18 +375,25 @@ export const ResidentDirectoryPage: React.FC = () => {
               </div>
 
               <div className="text-right text-[10px] text-slate-300 flex items-center gap-1">
-                <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Protected in Escrow</span>
+                <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Paystack Gateway</span>
               </div>
             </div>
+
+            {paymentError && (
+              <div className="p-3 bg-rose-50 rounded-artiva border border-rose-200 text-xs text-rose-700 font-semibold flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{paymentError}</span>
+              </div>
+            )}
 
             {/* Submit */}
             <div className="flex items-center justify-end gap-2 pt-2">
               <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedArtisanForBooking(null)}>
                 Cancel
               </Button>
-              <Button type="submit" variant="gold" size="md" icon={<Lock className="w-4 h-4 text-slate-900" />}>
-                Confirm Booking & Deposit Escrow
+              <Button type="submit" variant="gold" size="md" disabled={isPaying} icon={<CreditCard className="w-4 h-4 text-slate-900" />}>
+                {isPaying ? 'Opening Paystack…' : 'Pay via Paystack & Lock Escrow'}
               </Button>
             </div>
 

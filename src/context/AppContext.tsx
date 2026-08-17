@@ -13,6 +13,7 @@ import {
   PricingType
 } from '../types';
 import { ESTATES, SEED_ARTISANS, SEED_RESIDENTS, SEED_BOOKINGS, SEED_DISPUTES } from '../data/seedData';
+import { DEFAULT_AVATAR } from '../lib/utils';
 
 interface UserSession {
   id: string;
@@ -33,18 +34,25 @@ interface AppContextType {
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
   
-  // User Session & Role
+  // User Session & Role. currentRole is always derived from userSession — there
+  // is no separate settable role, so it can never drift out of sync with who's
+  // actually signed in (e.g. after logout).
   userSession: UserSession | null;
   currentRole: UserRole;
-  setCurrentRole: (role: UserRole) => void;
   selectedEstate: Estate;
   setSelectedEstate: (estate: Estate) => void;
   
-  // Auth Actions (Mock Phone + OTP)
-  loginWithOtp: (phone: string, role: UserRole, otpCode?: string) => UserSession;
+  // Auth Actions (phone-number sign-in; no real SMS verification is wired up yet — see loginWithOtp)
+  loginWithOtp: (phone: string, role: UserRole) => UserSession;
   signupResident: (name: string, phone: string, email: string, estateId: string) => UserSession;
   signupArtisan: (artisanData: Partial<Artisan>) => UserSession;
+  updateUserSession: (patch: Partial<Omit<UserSession, 'id' | 'role'>>) => void;
   logout: () => void;
+
+  // Real device geolocation, for "nearest to me" sorting
+  userLocation: { lat: number; lng: number } | null;
+  locationStatus: 'idle' | 'requesting' | 'granted' | 'denied' | 'unsupported';
+  requestUserLocation: () => void;
   
   // Artisans & Verification State Machine
   artisans: Artisan[];
@@ -117,17 +125,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [selectedEstate, setSelectedEstate] = useState<Estate>(ESTATES[0]);
 
-  const [userSession, setUserSession] = useState<UserSession | null>({
-    id: 'res-1',
-    name: 'Mrs. Folake Kuti',
-    phone: '+234 803 999 1111',
-    email: 'folake.kuti@example.ng',
-    role: 'resident',
-    estateId: 'est-1',
-    estateName: 'Lekki Phase 1 Estate',
-  });
+  const [userSession, setUserSession] = useState<UserSession | null>(null);
 
-  const [currentRole, setCurrentRole] = useState<UserRole>('resident');
+  const currentRole: UserRole = userSession?.role || 'resident';
 
   const [artisans, setArtisans] = useState<Artisan[]>(() => {
     const saved = localStorage.getItem('artiva_artisans');
@@ -152,6 +152,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeCategory, setActiveCategory] = useState<ServiceCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(() => {
+    const saved = localStorage.getItem('artiva_user_location');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'requesting' | 'granted' | 'denied' | 'unsupported'>('idle');
+
+  const requestUserLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus('unsupported');
+      return;
+    }
+    setLocationStatus('requesting');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
+        localStorage.setItem('artiva_user_location', JSON.stringify(loc));
+        setLocationStatus('granted');
+      },
+      () => setLocationStatus('denied'),
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 }
+    );
+  };
+
   useEffect(() => {
     localStorage.setItem('artiva_artisans', JSON.stringify(artisans));
   }, [artisans]);
@@ -164,11 +188,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('artiva_disputes', JSON.stringify(disputes));
   }, [disputes]);
 
-  const loginWithOtp = (phone: string, role: UserRole, otpCode = '1234'): UserSession => {
+  const loginWithOtp = (phone: string, role: UserRole): UserSession => {
     let session: UserSession;
     if (role === 'resident') {
-      const match = residents.find(r => r.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, '')) || residents[0];
-      session = {
+      const match = residents.find(r => r.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, ''));
+      session = match ? {
         id: match.id,
         name: match.name,
         phone: match.phone,
@@ -176,10 +200,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         role: 'resident',
         estateId: match.estateId,
         estateName: match.estateName,
+      } : {
+        id: `res-${Date.now()}`,
+        name: 'New Resident',
+        phone,
+        role: 'resident',
+        estateId: selectedEstate.id,
+        estateName: selectedEstate.name,
       };
     } else if (role === 'artisan') {
-      const match = artisans.find(a => a.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, '')) || artisans[0];
-      session = {
+      const match = artisans.find(a => a.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, ''));
+      session = match ? {
         id: match.id,
         name: match.name,
         phone: match.phone,
@@ -187,6 +218,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         role: 'artisan',
         estateId: match.estateId,
         estateName: match.estateName,
+      } : {
+        id: `art-${Date.now()}`,
+        name: 'New Artisan',
+        phone,
+        role: 'artisan',
+        estateId: selectedEstate.id,
+        estateName: selectedEstate.name,
       };
     } else {
       session = {
@@ -198,7 +236,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     setUserSession(session);
-    setCurrentRole(role);
     return session;
   };
 
@@ -227,7 +264,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setUserSession(session);
-    setCurrentRole('resident');
     return session;
   };
 
@@ -241,7 +277,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       categoryLabel: artisanData.categoryLabel || 'Plumbing',
       estateId: selectedEstate.id,
       estateName: selectedEstate.name,
-      distanceKm: 0.5,
+      // ponytail: no precise address geocoding yet, so new artisans are pinned to
+      // their estate's coordinates. Upgrade to a real geocoded address if/when
+      // artisans start entering a specific street address.
+      lat: selectedEstate.lat,
+      lng: selectedEstate.lng,
       rating: 5.0,
       reviewCount: 0,
       hourlyRate: artisanData.hourlyRate || 8500,
@@ -249,8 +289,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       verificationStatus: 'pending',
       bio: artisanData.bio || 'Vetted professional artisan.',
       skills: artisanData.skills || ['General Maintenance'],
-      idDocumentUrl: artisanData.idDocumentUrl || 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
-      photoUrl: artisanData.photoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
+      idDocumentUrl: artisanData.idDocumentUrl,
+      photoUrl: artisanData.photoUrl || DEFAULT_AVATAR,
       completedJobsCount: 0,
       disputeCount: 0,
       memberSince: 'Just now',
@@ -270,12 +310,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setUserSession(session);
-    setCurrentRole('artisan');
     return session;
+  };
+
+  const updateUserSession = (patch: Partial<Omit<UserSession, 'id' | 'role'>>) => {
+    setUserSession(prev => (prev ? { ...prev, ...patch } : prev));
   };
 
   const logout = () => {
     setUserSession(null);
+    navigate('/');
   };
 
   const verifyArtisan = (artisanId: string, status: VerificationStatus, rejectionReason?: string) => {
@@ -308,9 +352,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const newBooking: Booking = {
       id: `bk-${Date.now().toString().slice(-4)}`,
-      residentId: userSession?.id || 'res-1',
-      residentName: userSession?.name || 'Mrs. Folake Kuti',
-      residentPhone: userSession?.phone || '+234 803 999 1111',
+      residentId: userSession?.id || 'guest',
+      residentName: userSession?.name || 'Resident',
+      residentPhone: userSession?.phone || '',
       residentEstate: selectedEstate.name,
       artisanId,
       artisanName: artisan?.name || 'Artisan',
@@ -479,7 +523,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       raisedByRole: currentRole === 'artisan' ? 'artisan' : 'resident',
       reason,
       description,
-      evidencePhotoUrl: evidencePhotoUrl || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=600&q=80',
+      evidencePhotoUrl,
       status: 'awaiting_counter_statement',
       createdAt: new Date().toISOString(),
     };
@@ -546,13 +590,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsMobileMenuOpen,
       userSession,
       currentRole,
-      setCurrentRole,
       selectedEstate,
       setSelectedEstate,
       loginWithOtp,
       signupResident,
       signupArtisan,
+      updateUserSession,
       logout,
+      userLocation,
+      locationStatus,
+      requestUserLocation,
       artisans,
       verifyArtisan,
       residents,

@@ -5,30 +5,36 @@ import { ServiceCategory } from '../types';
 import { Input, Select } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-import { ShieldCheck, Award, Upload, CheckCircle2, FileText, Lock } from 'lucide-react';
+import { ShieldCheck, Award, Upload, CheckCircle2 } from 'lucide-react';
 
 export const ArtisanVerificationPage: React.FC = () => {
   const { artisans, signupArtisan, userSession, selectedEstate } = useApp();
 
-  const currentArtisan = artisans.find(a => a.phone === userSession?.phone) || artisans[5]; // Olumide Fashola
+  const currentArtisan = artisans.find(a => a.phone === userSession?.phone);
 
-  const [name, setName] = useState<string>(currentArtisan?.name || 'New Artisan');
+  const [name, setName] = useState<string>(currentArtisan?.name || '');
   const [category, setCategory] = useState<ServiceCategory>('plumbing');
   const [hourlyRate, setHourlyRate] = useState<number>(8500);
   const [bio, setBio] = useState<string>(currentArtisan?.bio || '');
-  const [skills, setSkills] = useState<string>('Leak Detection, Pressure Pumps, Pipe Fitting');
-  const [idPhotoUrl, setIdPhotoUrl] = useState<string>('https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80');
+  const [skills, setSkills] = useState<string>('');
+  const [idPhotoUrl, setIdPhotoUrl] = useState<string>('');
   const [submitted, setSubmitted] = useState<boolean>(currentArtisan?.verificationStatus === 'pending');
+
+  const handleIdFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setIdPhotoUrl(URL.createObjectURL(file));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!idPhotoUrl) return;
     signupArtisan({
       name,
       category,
       categoryLabel: CATEGORIES.find(c => c.id === category)?.label || 'Artisan',
       hourlyRate,
       bio,
-      skills: skills.split(',').map(s => s.trim()),
+      skills: skills.split(',').map(s => s.trim()).filter(Boolean),
       idDocumentUrl: idPhotoUrl,
     });
     setSubmitted(true);
@@ -135,39 +141,37 @@ export const ArtisanVerificationPage: React.FC = () => {
             Upload Identification Document (NIN / Voter Card / Driver's License)
           </label>
 
-          <div className="border-2 border-dashed border-slate-300 rounded-artiva p-4 text-center bg-slate-50 hover:border-artiva-teal transition-colors">
+          <label className="block border-2 border-dashed border-slate-300 rounded-artiva p-4 text-center bg-slate-50 hover:border-artiva-teal transition-colors cursor-pointer">
+            <input type="file" accept="image/*,.pdf" onChange={handleIdFileSelect} className="hidden" />
             {idPhotoUrl ? (
               <div className="space-y-2">
                 <img
                   src={idPhotoUrl}
-                  alt="NIN Document"
+                  alt="Selected identity document"
                   className="w-full h-40 object-cover rounded-artiva border border-slate-200 max-w-md mx-auto"
                 />
                 <p className="text-xs text-emerald-600 font-bold flex items-center justify-center gap-1">
-                  <CheckCircle2 className="w-4 h-4" /> Identity Document Attached
+                  <CheckCircle2 className="w-4 h-4" /> Document selected — click to replace
                 </p>
               </div>
             ) : (
               <div className="space-y-2">
                 <Upload className="w-8 h-8 text-slate-400 mx-auto" />
-                <p className="text-xs text-slate-600">Drag & drop your NIN slip or click to select image</p>
-                <button
-                  type="button"
-                  onClick={() => setIdPhotoUrl('https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80')}
-                  className="text-xs text-artiva-teal hover:underline font-bold"
-                >
-                  Attach Sample NIN Document
-                </button>
+                <p className="text-xs text-slate-600">Click to select a photo of your NIN slip, voter's card, or driver's license</p>
               </div>
             )}
-          </div>
+          </label>
         </div>
 
-        <div className="pt-2 border-t border-slate-100 flex justify-end">
+        <div className="pt-2 border-t border-slate-100 flex flex-col items-end gap-1.5">
+          {!idPhotoUrl && (
+            <p className="text-[11px] text-amber-700">Select an identity document above before submitting.</p>
+          )}
           <Button
             variant="primary"
             size="lg"
             type="submit"
+            disabled={!idPhotoUrl}
             icon={<ShieldCheck className="w-4 h-4" />}
           >
             Submit for Admin Verification
