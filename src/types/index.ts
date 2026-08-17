@@ -41,7 +41,7 @@ export interface Artisan {
   rating: number;
   reviewCount: number;
   hourlyRate: number;
-  inspectionFee: number; // Inspection fee for on-site diagnosis (e.g. ₦3,000)
+  inspectionFee: number;
   verificationStatus: VerificationStatus;
   bio: string;
   skills: string[];
@@ -69,8 +69,8 @@ export type PricingType = 'fixed_rate' | 'inspection_first';
 
 export type BookingStatus = 
   | 'requested' 
-  | 'inspection_requested'   // Resident requested on-site inspection
-  | 'quote_pending'          // Artisan inspected & submitted custom price quote
+  | 'inspection_requested' 
+  | 'quote_pending' 
   | 'accepted' 
   | 'declined' 
   | 'in_progress' 
@@ -95,9 +95,9 @@ export interface Booking {
   preferredDate: string;
   preferredTime: string;
   pricingType: PricingType;
-  inspectionFee: number;      // Inspection fee locked in escrow for diagnosis
-  customQuoteAmount?: number; // Custom quote proposed by artisan after on-site inspection
-  quoteNotes?: string;        // Artisan notes on materials & labor breakdown
+  inspectionFee: number;
+  customQuoteAmount?: number;
+  quoteNotes?: string;
   totalAmount: number;
   escrowStatus: EscrowStatus;
   status: BookingStatus;
@@ -107,7 +107,7 @@ export interface Booking {
   updatedAt: string;
 }
 
-export type DisputeStatus = 'open' | 'under_review' | 'resolved';
+export type DisputeStatus = 'open' | 'awaiting_counter_statement' | 'under_review' | 'resolved';
 
 export interface Dispute {
   id: string;
@@ -120,6 +120,12 @@ export interface Dispute {
   reason: string;
   description: string;
   evidencePhotoUrl?: string;
+  
+  // Both Sides of the Story: Counter-Statement
+  counterStatement?: string;
+  counterEvidencePhotoUrl?: string;
+  counterSubmittedAt?: string;
+  
   status: DisputeStatus;
   resolutionSummary?: string;
   createdAt: string;

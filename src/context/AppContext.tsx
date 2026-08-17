@@ -72,9 +72,10 @@ interface AppContextType {
   completeJobByArtisan: (bookingId: string) => void;
   confirmJobByResident: (bookingId: string) => void;
   
-  // Disputes
+  // Both Sides of Dispute Story
   disputes: Dispute[];
   createDispute: (bookingId: string, reason: string, description: string, evidencePhotoUrl?: string) => void;
+  submitDisputeCounterStatement: (disputeId: string, counterStatement: string, counterEvidenceUrl?: string) => void;
   resolveDispute: (disputeId: string, resolution: string, outcome: 'release_to_artisan' | 'refund_to_resident') => void;
 
   // Directory Search & Filters
@@ -87,10 +88,8 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Mobile Nav Drawer State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
-  // Router
   const [currentPath, setCurrentPath] = useState<string>(() => {
     return window.location.hash ? window.location.hash.replace('#', '') : '/';
   });
@@ -125,7 +124,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [currentRole, setCurrentRole] = useState<UserRole>('resident');
 
-  // Shared Collections
   const [artisans, setArtisans] = useState<Artisan[]>(() => {
     const saved = localStorage.getItem('artiva_artisans');
     return saved ? JSON.parse(saved) : SEED_ARTISANS;
@@ -288,7 +286,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  // Booking & Inspection Quote State Machine
   const createBooking = (
     artisanId: string, 
     serviceDescription: string, 
@@ -317,7 +314,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       pricingType,
       inspectionFee: inspFee,
       totalAmount: amount,
-      escrowStatus: 'held', // Fee held in escrow
+      escrowStatus: 'held',
       status: pricingType === 'inspection_first' ? 'inspection_requested' : 'requested',
       residentConfirmed: false,
       artisanConfirmed: false,
@@ -329,7 +326,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newBooking;
   };
 
-  // Artisan submits official quote after inspecting the work on site
   const submitQuoteProposal = (bookingId: string, customAmount: number, quoteNotes: string) => {
     setBookings(prev => prev.map(b => {
       if (b.id === bookingId) {
@@ -346,7 +342,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  // Resident approves artisan's custom quote -> Locks full amount in escrow & moves status to accepted!
   const approveQuoteProposal = (bookingId: string) => {
     setBookings(prev => prev.map(b => {
       if (b.id === bookingId) {
@@ -361,14 +356,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  // Resident rejects artisan's custom quote -> Releases inspection fee to artisan and closes request
   const rejectQuoteProposal = (bookingId: string) => {
     setBookings(prev => prev.map(b => {
       if (b.id === bookingId) {
         return {
           ...b,
           status: 'declined',
-          escrowStatus: 'released', // Inspection fee paid out for artisan's travel & diagnosis time
+          escrowStatus: 'released',
           updatedAt: new Date().toISOString(),
         };
       }
@@ -441,7 +435,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       reason,
       description,
       evidencePhotoUrl: evidencePhotoUrl || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=600&q=80',
-      status: 'under_review',
+      status: 'awaiting_counter_statement', // Awaiting the other party's side of the story!
       createdAt: new Date().toISOString(),
     };
 
@@ -453,6 +447,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       escrowStatus: 'disputed',
       updatedAt: new Date().toISOString()
     } : b));
+  };
+
+  // Submit Counter-Statement for the other side of the story
+  const submitDisputeCounterStatement = (disputeId: string, counterStatement: string, counterEvidenceUrl?: string) => {
+    setDisputes(prev => prev.map(d => {
+      if (d.id === disputeId) {
+        return {
+          ...d,
+          counterStatement,
+          counterEvidencePhotoUrl: counterEvidenceUrl || d.evidencePhotoUrl,
+          counterSubmittedAt: new Date().toISOString(),
+          status: 'under_review', // Both sides of the story submitted -> Ready for admin adjudication!
+        };
+      }
+      return d;
+    }));
   };
 
   const resolveDispute = (disputeId: string, resolutionSummary: string, outcome: 'release_to_artisan' | 'refund_to_resident') => {
@@ -514,6 +524,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       confirmJobByResident,
       disputes,
       createDispute,
+      submitDisputeCounterStatement,
       resolveDispute,
       activeCategory,
       setActiveCategory,
