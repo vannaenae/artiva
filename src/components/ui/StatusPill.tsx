@@ -1,6 +1,6 @@
 import React from 'react';
 import { BookingStatus, EscrowStatus } from '../../types';
-import { Clock, CheckCircle2, AlertCircle, RefreshCw, Lock, DollarSign, XCircle, RotateCcw } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, RefreshCw, Lock, DollarSign, XCircle, RotateCcw, Eye, FileText } from 'lucide-react';
 
 interface StatusPillProps {
   status: BookingStatus;
@@ -9,6 +9,20 @@ interface StatusPillProps {
 
 export const StatusPill: React.FC<StatusPillProps> = ({ status }) => {
   const styles: Record<BookingStatus, { bg: string; text: string; border: string; icon: React.ReactNode; label: string }> = {
+    inspection_requested: {
+      bg: 'bg-purple-50',
+      text: 'text-purple-700',
+      border: 'border-purple-200',
+      icon: <Eye className="w-3.5 h-3.5" />,
+      label: 'On-Site Inspection Requested',
+    },
+    quote_pending: {
+      bg: 'bg-indigo-50',
+      text: 'text-indigo-700',
+      border: 'border-indigo-200',
+      icon: <FileText className="w-3.5 h-3.5" />,
+      label: 'Price Quote Pending Approval',
+    },
     requested: {
       bg: 'bg-blue-50',
       text: 'text-blue-700',

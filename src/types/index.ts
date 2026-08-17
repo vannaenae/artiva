@@ -41,6 +41,7 @@ export interface Artisan {
   rating: number;
   reviewCount: number;
   hourlyRate: number;
+  inspectionFee: number; // Inspection fee for on-site diagnosis (e.g. ₦3,000)
   verificationStatus: VerificationStatus;
   bio: string;
   skills: string[];
@@ -64,8 +65,12 @@ export interface Resident {
   address: string;
 }
 
+export type PricingType = 'fixed_rate' | 'inspection_first';
+
 export type BookingStatus = 
   | 'requested' 
+  | 'inspection_requested'   // Resident requested on-site inspection
+  | 'quote_pending'          // Artisan inspected & submitted custom price quote
   | 'accepted' 
   | 'declined' 
   | 'in_progress' 
@@ -89,6 +94,10 @@ export interface Booking {
   serviceDescription: string;
   preferredDate: string;
   preferredTime: string;
+  pricingType: PricingType;
+  inspectionFee: number;      // Inspection fee locked in escrow for diagnosis
+  customQuoteAmount?: number; // Custom quote proposed by artisan after on-site inspection
+  quoteNotes?: string;        // Artisan notes on materials & labor breakdown
   totalAmount: number;
   escrowStatus: EscrowStatus;
   status: BookingStatus;

@@ -9,7 +9,8 @@ import {
   ServiceCategory, 
   VerificationStatus,
   BookingStatus,
-  EscrowStatus
+  EscrowStatus,
+  PricingType
 } from '../types';
 import { ESTATES, SEED_ARTISANS, SEED_RESIDENTS, SEED_BOOKINGS, SEED_DISPUTES } from '../data/seedData';
 
@@ -27,6 +28,10 @@ interface AppContextType {
   // Navigation & Routing
   currentPath: string;
   navigate: (path: string) => void;
+  
+  // Mobile Nav Drawer Toggle
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (open: boolean) => void;
   
   // User Session & Role
   userSession: UserSession | null;
@@ -50,9 +55,19 @@ interface AppContextType {
 
   // Booking & Escrow State Machine
   bookings: Booking[];
-  createBooking: (artisanId: string, serviceDescription: string, date: string, time: string, estimatedHours?: number) => Booking;
+  createBooking: (
+    artisanId: string, 
+    serviceDescription: string, 
+    date: string, 
+    time: string, 
+    pricingType: PricingType,
+    estimatedHours?: number
+  ) => Booking;
   acceptBooking: (bookingId: string) => void;
   declineBooking: (bookingId: string) => void;
+  submitQuoteProposal: (bookingId: string, customAmount: number, quoteNotes: string) => void;
+  approveQuoteProposal: (bookingId: string) => void;
+  rejectQuoteProposal: (bookingId: string) => void;
   startJob: (bookingId: string) => void;
   completeJobByArtisan: (bookingId: string) => void;
   confirmJobByResident: (bookingId: string) => void;
@@ -72,7 +87,10 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // 1. Client-Side Hash Router
+  // Mobile Nav Drawer State
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+
+  // Router
   const [currentPath, setCurrentPath] = useState<string>(() => {
     return window.location.hash ? window.location.hash.replace('#', '') : '/';
   });
@@ -80,6 +98,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const navigate = (path: string) => {
     window.location.hash = path;
     setCurrentPath(path);
+    setIsMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -92,10 +111,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // 2. Estate Selection
-  const [selectedEstate, setSelectedEstate] = useState<Estate>(ESTATES[0]); // Lekki Phase 1
+  const [selectedEstate, setSelectedEstate] = useState<Estate>(ESTATES[0]);
 
-  // 3. User Session State
   const [userSession, setUserSession] = useState<UserSession | null>({
     id: 'res-1',
     name: 'Mrs. Folake Kuti',
@@ -108,7 +125,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [currentRole, setCurrentRole] = useState<UserRole>('resident');
 
-  // 4. Shared In-Memory Data Collections (persisted in localStorage for session robustness)
+  // Shared Collections
   const [artisans, setArtisans] = useState<Artisan[]>(() => {
     const saved = localStorage.getItem('artiva_artisans');
     return saved ? JSON.parse(saved) : SEED_ARTISANS;
@@ -129,11 +146,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : SEED_DISPUTES;
   });
 
-  // Directory Search & Filters
   const [activeCategory, setActiveCategory] = useState<ServiceCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Persist state updates to localStorage so testing across tabs/refreshes works
   useEffect(() => {
     localStorage.setItem('artiva_artisans', JSON.stringify(artisans));
   }, [artisans]);
@@ -146,7 +161,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('artiva_disputes', JSON.stringify(disputes));
   }, [disputes]);
 
-  // Auth Helpers
   const loginWithOtp = (phone: string, role: UserRole, otpCode = '1234'): UserSession => {
     let session: UserSession;
     if (role === 'resident') {
@@ -228,7 +242,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       rating: 5.0,
       reviewCount: 0,
       hourlyRate: artisanData.hourlyRate || 8500,
-      verificationStatus: 'pending', // Starts in pending review state
+      inspectionFee: 3000,
+      verificationStatus: 'pending',
       bio: artisanData.bio || 'Vetted professional artisan.',
       skills: artisanData.skills || ['General Maintenance'],
       idDocumentUrl: artisanData.idDocumentUrl || 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
@@ -260,7 +275,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUserSession(null);
   };
 
-  // Verification Review Action
   const verifyArtisan = (artisanId: string, status: VerificationStatus, rejectionReason?: string) => {
     setArtisans(prev => prev.map(art => {
       if (art.id === artisanId) {
@@ -274,16 +288,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  // Booking & Escrow State Machine
+  // Booking & Inspection Quote State Machine
   const createBooking = (
     artisanId: string, 
     serviceDescription: string, 
     date: string, 
     time: string, 
+    pricingType: PricingType,
     estimatedHours = 2
   ): Booking => {
     const artisan = artisans.find(a => a.id === artisanId);
-    const amount = (artisan?.hourlyRate || 8500) * estimatedHours;
+    const inspFee = artisan?.inspectionFee || 3000;
+    const amount = pricingType === 'inspection_first' ? inspFee : (artisan?.hourlyRate || 8500) * estimatedHours;
 
     const newBooking: Booking = {
       id: `bk-${Date.now().toString().slice(-4)}`,
@@ -298,9 +314,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       serviceDescription,
       preferredDate: date,
       preferredTime: time,
+      pricingType,
+      inspectionFee: inspFee,
       totalAmount: amount,
-      escrowStatus: 'held', // Funds immediately locked in escrow
-      status: 'requested',
+      escrowStatus: 'held', // Fee held in escrow
+      status: pricingType === 'inspection_first' ? 'inspection_requested' : 'requested',
       residentConfirmed: false,
       artisanConfirmed: false,
       createdAt: new Date().toISOString(),
@@ -309,6 +327,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setBookings(prev => [newBooking, ...prev]);
     return newBooking;
+  };
+
+  // Artisan submits official quote after inspecting the work on site
+  const submitQuoteProposal = (bookingId: string, customAmount: number, quoteNotes: string) => {
+    setBookings(prev => prev.map(b => {
+      if (b.id === bookingId) {
+        return {
+          ...b,
+          customQuoteAmount: customAmount,
+          quoteNotes,
+          totalAmount: customAmount,
+          status: 'quote_pending',
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return b;
+    }));
+  };
+
+  // Resident approves artisan's custom quote -> Locks full amount in escrow & moves status to accepted!
+  const approveQuoteProposal = (bookingId: string) => {
+    setBookings(prev => prev.map(b => {
+      if (b.id === bookingId) {
+        return {
+          ...b,
+          status: 'accepted',
+          escrowStatus: 'held',
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return b;
+    }));
+  };
+
+  // Resident rejects artisan's custom quote -> Releases inspection fee to artisan and closes request
+  const rejectQuoteProposal = (bookingId: string) => {
+    setBookings(prev => prev.map(b => {
+      if (b.id === bookingId) {
+        return {
+          ...b,
+          status: 'declined',
+          escrowStatus: 'released', // Inspection fee paid out for artisan's travel & diagnosis time
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return b;
+    }));
   };
 
   const acceptBooking = (bookingId: string) => {
@@ -343,7 +408,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const confirmJobByResident = (bookingId: string) => {
     setBookings(prev => prev.map(b => {
       if (b.id === bookingId) {
-        // Dual completion confirmation -> releases escrow!
         return {
           ...b,
           residentConfirmed: true,
@@ -356,14 +420,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return b;
     }));
 
-    // Increment completed jobs count for artisan
     const targetBooking = bookings.find(b => b.id === bookingId);
     if (targetBooking) {
       setArtisans(prev => prev.map(a => a.id === targetBooking.artisanId ? { ...a, completedJobsCount: a.completedJobsCount + 1 } : a));
     }
   };
 
-  // Disputes Flow
   const createDispute = (bookingId: string, reason: string, description: string, evidencePhotoUrl?: string) => {
     const booking = bookings.find(b => b.id === bookingId);
     if (!booking) return;
@@ -385,7 +447,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setDisputes(prev => [newDispute, ...prev]);
 
-    // Freeze escrow funds on booking
     setBookings(prev => prev.map(b => b.id === bookingId ? {
       ...b,
       status: 'disputed',
@@ -427,6 +488,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider value={{
       currentPath,
       navigate,
+      isMobileMenuOpen,
+      setIsMobileMenuOpen,
       userSession,
       currentRole,
       setCurrentRole,
@@ -443,6 +506,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createBooking,
       acceptBooking,
       declineBooking,
+      submitQuoteProposal,
+      approveQuoteProposal,
+      rejectQuoteProposal,
       startJob,
       completeJobByArtisan,
       confirmJobByResident,

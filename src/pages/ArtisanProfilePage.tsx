@@ -1,314 +1,300 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Artisan } from '../types';
 import { Badge } from '../components/ui/Badge';
+import { RatingStars } from '../components/ui/RatingStars';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
-import { RatingStars } from '../components/ui/RatingStars';
 import { formatCurrency, formatDistance } from '../lib/utils';
+import { PricingType } from '../types';
 import { 
-  ShieldCheck, 
   MapPin, 
+  ShieldCheck, 
   Calendar, 
+  Clock, 
   CheckCircle2, 
-  Lock, 
-  Star, 
-  User, 
+  MessageSquare, 
+  Award, 
   Phone, 
+  Mail,
+  Lock,
   ArrowLeft,
-  MessageSquare
+  Eye
 } from 'lucide-react';
 
 export const ArtisanProfilePage: React.FC = () => {
-  const { currentPath, navigate, artisans, createBooking, selectedEstate } = useApp();
+  const { currentPath, navigate, artisans, createBooking } = useApp();
 
-  // Extract ID from current hash path e.g. /artisan/art-1
+  // Extract artisan ID from route hash e.g. /artisan/art-1
   const artisanId = currentPath.split('/artisan/')[1] || 'art-1';
   const artisan = artisans.find(a => a.id === artisanId) || artisans[0];
 
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState<boolean>(false);
-  const [serviceDescription, setServiceDescription] = useState<string>('');
-  const [preferredDate, setPreferredDate] = useState<string>('2026-08-19');
-  const [preferredTime, setPreferredTime] = useState<string>('10:00 AM');
-  const [hours, setHours] = useState<number>(2);
-  const [bookingSuccess, setBookingSuccess] = useState<boolean>(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [serviceDescription, setServiceDescription] = useState('');
+  const [preferredDate, setPreferredDate] = useState('2026-08-19');
+  const [preferredTime, setPreferredTime] = useState('10:00 AM');
+  const [pricingType, setPricingType] = useState<PricingType>('fixed_rate');
+  const [estimatedHours, setEstimatedHours] = useState(2);
 
-  const handleBookingSubmit = (e: React.FormEvent) => {
+  const handleCreateBooking = (e: React.FormEvent) => {
     e.preventDefault();
-    createBooking(
+    if (!serviceDescription.trim()) return;
+
+    const booking = createBooking(
       artisan.id,
-      serviceDescription || 'General repair service.',
+      serviceDescription,
       preferredDate,
       preferredTime,
-      hours
+      pricingType,
+      estimatedHours
     );
-    setBookingSuccess(true);
+
+    setIsBookingModalOpen(false);
+    navigate(`/bookings/${booking.id}`);
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-8 py-4 animate-fade-in">
       
-      {/* Back Button */}
+      {/* Back to Directory Button */}
       <button
         onClick={() => navigate('/directory')}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-artiva-teal transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-artiva-teal transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span>Back to Artisan Directory</span>
+        Back to Artisan Directory
       </button>
 
-      {/* Main Profile Header Card */}
-      <div className="bg-white p-6 sm:p-8 rounded-artiva-lg border border-slate-200 shadow-artiva-sm space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-slate-100">
-          <div className="flex items-start gap-4">
-            <div className="relative shrink-0">
+      {/* Main Profile Header Banner */}
+      <div className="bg-white rounded-artiva-lg p-6 sm:p-8 border border-slate-200 shadow-artiva-sm space-y-6">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-6">
+          <div className="flex flex-col sm:flex-row items-start gap-4">
+            <div className="relative">
               <img
                 src={artisan.photoUrl}
                 alt={artisan.name}
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-artiva object-cover border-2 border-artiva-teal/20"
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-artiva-lg object-cover border-2 border-artiva-teal shadow-artiva-md"
               />
               {artisan.verificationStatus === 'verified' && (
-                <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white rounded-full p-1 border-2 border-white">
-                  <ShieldCheck className="w-4 h-4" />
+                <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white rounded-full p-1 border-2 border-white shadow">
+                  <ShieldCheck className="w-5 h-5" />
                 </div>
               )}
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 font-heading">{artisan.name}</h1>
-                <Badge status={artisan.verificationStatus} size="sm" />
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-extrabold text-slate-900 font-heading">{artisan.name}</h1>
+                <Badge status={artisan.verificationStatus} />
               </div>
-              <p className="text-xs text-artiva-teal-dark font-bold">{artisan.categoryLabel}</p>
-              
-              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 pt-1">
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                  {artisan.estateName} ({formatDistance(artisan.distanceKm)})
-                </span>
-                <span className="flex items-center gap-1">
-                  <Phone className="w-3.5 h-3.5 text-slate-400" />
-                  {artisan.phone}
-                </span>
+              <p className="text-sm font-bold text-artiva-teal-dark">{artisan.categoryLabel}</p>
+              <div className="flex items-center gap-2 text-xs text-slate-500 pt-1">
+                <MapPin className="w-4 h-4 text-slate-400" />
+                <span>{artisan.estateName} • </span>
+                <span className="font-bold text-artiva-teal">{formatDistance(artisan.distanceKm)} away</span>
+              </div>
+              <div className="pt-2 flex items-center gap-2">
+                <RatingStars rating={artisan.rating} reviewCount={artisan.reviewCount} />
+                <span className="text-xs text-slate-400">• Member since {artisan.memberSince}</span>
               </div>
             </div>
           </div>
 
-          <div className="w-full sm:w-auto text-left sm:text-right bg-slate-50 sm:bg-transparent p-4 sm:p-0 rounded-artiva border sm:border-none border-slate-200">
-            <span className="text-xs text-slate-500 block">Service Rate</span>
-            <span className="text-2xl font-extrabold text-slate-900 font-heading">
-              {formatCurrency(artisan.hourlyRate)}
-            </span>
-            <span className="text-xs text-slate-500"> / hour</span>
-
-            <div className="pt-3">
-              <Button
-                variant="gold"
-                size="md"
-                fullWidth
-                onClick={() => {
-                  setIsBookingModalOpen(true);
-                  setBookingSuccess(false);
-                }}
-                icon={<Calendar className="w-4 h-4 text-slate-900" />}
-              >
-                Request Booking
-              </Button>
+          {/* Pricing & CTA Card */}
+          <div className="bg-slate-50 p-4 rounded-artiva border border-slate-200 text-right space-y-3 w-full sm:w-auto">
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Standard Rate</span>
+              <span className="text-xl font-extrabold text-slate-900 font-heading">{formatCurrency(artisan.hourlyRate)}</span>
+              <span className="text-xs text-slate-500"> / hour</span>
             </div>
-          </div>
-        </div>
 
-        {/* Ratings & Metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-          <div className="p-3 bg-slate-50 rounded-artiva border border-slate-200/80">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Rating</span>
-            <div className="mt-1 flex items-center justify-center">
-              <RatingStars rating={artisan.rating} reviewCount={artisan.reviewCount} size="sm" />
+            <div className="text-xs text-slate-600 border-t border-slate-200 pt-2">
+              <span className="text-[10px] text-slate-400 block font-bold uppercase">On-Site Diagnosis Fee</span>
+              <span className="font-bold text-purple-700">{formatCurrency(artisan.inspectionFee || 3000)}</span>
             </div>
-          </div>
 
-          <div className="p-3 bg-slate-50 rounded-artiva border border-slate-200/80">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Completed Jobs</span>
-            <span className="text-sm font-bold text-slate-800">{artisan.completedJobsCount} Verified Jobs</span>
-          </div>
-
-          <div className="p-3 bg-slate-50 rounded-artiva border border-slate-200/80">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Member Since</span>
-            <span className="text-sm font-bold text-slate-800">{artisan.memberSince}</span>
-          </div>
-
-          <div className="p-3 bg-slate-50 rounded-artiva border border-slate-200/80">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Escrow Guarantee</span>
-            <span className="text-xs font-bold text-emerald-600">✓ 100% Protected</span>
+            <Button
+              variant="gold"
+              size="md"
+              onClick={() => setIsBookingModalOpen(true)}
+              className="w-full justify-center"
+              icon={<Calendar className="w-4 h-4 text-slate-900" />}
+            >
+              Book Artisan Now
+            </Button>
           </div>
         </div>
 
         {/* Bio */}
-        <div className="space-y-2">
-          <h3 className="text-sm font-bold text-slate-900">About {artisan.name}</h3>
-          <p className="text-xs text-slate-700 leading-relaxed bg-slate-50/70 p-4 rounded-artiva border border-slate-200">
-            {artisan.bio}
-          </p>
+        <div className="border-t border-slate-100 pt-4 space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-heading">About Professional</h3>
+          <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-normal">{artisan.bio}</p>
         </div>
 
-        {/* Skills */}
-        <div className="space-y-2">
-          <h3 className="text-sm font-bold text-slate-900">Verified Skills & Tools</h3>
+        {/* Verified Skills */}
+        <div className="border-t border-slate-100 pt-4 space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-heading">Verified Skills & Services</h3>
           <div className="flex flex-wrap gap-2">
             {artisan.skills.map((skill, i) => (
-              <span key={i} className="text-xs px-3 py-1 rounded-artiva-pill bg-artiva-teal-light text-artiva-teal-dark font-bold border border-artiva-teal/20">
-                ✓ {skill}
+              <span key={i} className="text-xs px-3 py-1 rounded-artiva-pill bg-teal-50 text-artiva-teal-dark font-semibold border border-teal-200/60 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-artiva-teal" />
+                {skill}
               </span>
             ))}
           </div>
         </div>
-
-        {/* Customer Reviews Section */}
-        <div className="space-y-4 pt-4 border-t border-slate-100">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-artiva-teal" />
-            Estate Resident Reviews ({artisan.reviews?.length || 0})
-          </h3>
-
-          {artisan.reviews && artisan.reviews.length > 0 ? (
-            <div className="space-y-3">
-              {artisan.reviews.map((rev) => (
-                <div key={rev.id} className="p-3.5 rounded-artiva bg-slate-50 border border-slate-200 space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-slate-900">{rev.residentName} ({rev.residentEstate})</span>
-                    <span className="text-slate-400 text-[11px]">{rev.date}</span>
-                  </div>
-                  <RatingStars rating={rev.rating} size="sm" showCount={false} />
-                  <p className="text-xs text-slate-600 pt-1">"{rev.comment}"</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-slate-500 italic">No public reviews written yet for this artisan.</p>
-          )}
-        </div>
-
       </div>
 
-      {/* Booking Form Modal */}
-      <Modal
-        isOpen={isBookingModalOpen}
-        onClose={() => setIsBookingModalOpen(false)}
-        title={bookingSuccess ? 'Booking Request Sent' : `Book ${artisan.name}`}
-        subtitle={`Escrow Protection Vault • ${artisan.categoryLabel}`}
-        maxWidth="md"
-      >
-        {!bookingSuccess ? (
-          <form onSubmit={handleBookingSubmit} className="space-y-4">
-            <div className="bg-slate-50 p-3 rounded-artiva border border-slate-200 flex items-center gap-3">
-              <img src={artisan.photoUrl} alt={artisan.name} className="w-10 h-10 rounded-full object-cover" />
-              <div>
-                <h4 className="font-bold text-slate-900 text-xs">{artisan.name}</h4>
-                <p className="text-[11px] text-artiva-teal-dark font-semibold">
-                  {formatCurrency(artisan.hourlyRate)} per hour • {formatDistance(artisan.distanceKm)}
-                </p>
+      {/* Customer Reviews Section */}
+      {artisan.reviews && artisan.reviews.length > 0 && (
+        <div className="bg-white rounded-artiva-lg p-6 sm:p-8 border border-slate-200 shadow-artiva-sm space-y-4">
+          <h3 className="text-lg font-bold text-slate-900 font-heading flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-artiva-teal" />
+            Estate Resident Reviews ({artisan.reviews.length})
+          </h3>
+
+          <div className="space-y-4">
+            {artisan.reviews.map(review => (
+              <div key={review.id} className="p-4 bg-slate-50 rounded-artiva border border-slate-200/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-xs text-slate-900 font-heading">{review.residentName}</h4>
+                    <span className="text-[11px] text-slate-500">{review.residentEstate} • {review.date}</span>
+                  </div>
+                  <RatingStars rating={review.rating} size="sm" />
+                </div>
+                <p className="text-xs text-slate-700 italic">"{review.comment}"</p>
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Booking Modal */}
+      {isBookingModalOpen && (
+        <Modal
+          isOpen={true}
+          onClose={() => setIsBookingModalOpen(false)}
+          title={`Book ${artisan.name}`}
+        >
+          <form onSubmit={handleCreateBooking} className="space-y-4">
+            
+            {/* Pricing Model Option */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-800 font-heading block">
+                Select Job Pricing Model:
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPricingType('fixed_rate')}
+                  className={`p-3 rounded-artiva border text-left flex flex-col justify-between transition-all ${
+                    pricingType === 'fixed_rate'
+                      ? 'border-artiva-teal bg-artiva-teal-light/40 text-slate-900 ring-2 ring-artiva-teal/30'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold font-heading">Fixed Rate</span>
+                    {pricingType === 'fixed_rate' && <CheckCircle2 className="w-4 h-4 text-artiva-teal" />}
+                  </div>
+                  <span className="text-[11px] text-slate-500 mt-1">
+                    {formatCurrency(artisan.hourlyRate)}/hr estimated
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPricingType('inspection_first')}
+                  className={`p-3 rounded-artiva border text-left flex flex-col justify-between transition-all ${
+                    pricingType === 'inspection_first'
+                      ? 'border-artiva-teal bg-artiva-teal-light/40 text-slate-900 ring-2 ring-artiva-teal/30'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold font-heading">Request On-Site Inspection</span>
+                    {pricingType === 'inspection_first' && <CheckCircle2 className="w-4 h-4 text-artiva-teal" />}
+                  </div>
+                  <span className="text-[11px] text-slate-500 mt-1">
+                    {formatCurrency(artisan.inspectionFee || 3000)} diagnosis fee held
+                  </span>
+                </button>
+              </div>
+
+              {pricingType === 'inspection_first' && (
+                <div className="p-3 bg-amber-50 rounded-artiva border border-amber-200 text-xs text-amber-900 space-y-1">
+                  <div className="font-bold flex items-center gap-1">
+                    <Eye className="w-4 h-4 text-amber-700" />
+                    How On-Site Inspection Works:
+                  </div>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    Artisan visits your estate home to inspect the issue and submits an official custom quote proposal for materials and labor. You review and approve the quote before any work starts.
+                  </p>
+                </div>
+              )}
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-slate-700">
-                Service Requirements / Job Description
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-800 font-heading">
+                Describe the Job / Repair Needed:
               </label>
               <textarea
+                required
                 rows={3}
                 value={serviceDescription}
                 onChange={(e) => setServiceDescription(e.target.value)}
-                placeholder="Describe the issue (e.g., Water pump leak, inverter tripping, deep cleaning)..."
-                className="w-full rounded-artiva border border-slate-300 p-3 text-sm text-slate-900 focus:border-artiva-teal focus:ring-1 focus:ring-artiva-teal outline-none"
-                required
+                placeholder="Describe your issue in detail..."
+                className="w-full text-xs p-3 rounded-artiva border border-slate-300 focus:ring-2 focus:ring-artiva-teal outline-none"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <Input
-                label="Preferred Date"
+                label="Date"
                 type="date"
+                required
                 value={preferredDate}
                 onChange={(e) => setPreferredDate(e.target.value)}
-                required
               />
               <Input
-                label="Preferred Time"
+                label="Time"
                 type="text"
+                required
                 value={preferredTime}
                 onChange={(e) => setPreferredTime(e.target.value)}
-                placeholder="10:00 AM"
-                required
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-slate-700">
-                Estimated Duration (Hours)
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={12}
-                value={hours}
-                onChange={(e) => setHours(Number(e.target.value))}
-                className="w-full rounded-artiva border border-slate-300 p-2.5 text-sm"
-              />
-            </div>
-
-            {/* Escrow Fee Summary */}
-            <div className="bg-artiva-teal-light/60 p-4 rounded-artiva border border-artiva-teal/30 space-y-2">
-              <div className="flex items-center justify-between text-xs font-medium text-slate-700">
-                <span>Hourly Rate:</span>
-                <span>{formatCurrency(artisan.hourlyRate)}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs font-medium text-slate-700">
-                <span>Estimated Hours:</span>
-                <span>{hours} hours</span>
-              </div>
-              <div className="pt-2 border-t border-artiva-teal/20 flex items-center justify-between font-bold text-slate-900 text-sm">
-                <span>Escrow Deposit Total:</span>
-                <span className="text-artiva-teal-dark text-base font-extrabold">
-                  {formatCurrency(artisan.hourlyRate * hours)}
+            <div className="p-3 bg-slate-900 text-white rounded-artiva flex items-center justify-between text-xs">
+              <div>
+                <span className="text-slate-400 text-[10px] uppercase font-bold block">Escrow Hold Amount</span>
+                <span className="font-extrabold text-sm text-amber-300 font-heading">
+                  {pricingType === 'inspection_first'
+                    ? formatCurrency(artisan.inspectionFee || 3000)
+                    : formatCurrency(artisan.hourlyRate * estimatedHours)}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-600 pt-1">
-                🔒 Funds are locked in escrow until both you and the artisan confirm job completion.
-              </p>
+
+              <div className="text-right text-[10px] text-slate-300 flex items-center gap-1">
+                <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Protected in Escrow</span>
+              </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="md" onClick={() => setIsBookingModalOpen(false)} type="button">
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setIsBookingModalOpen(false)}>
                 Cancel
               </Button>
-              <Button variant="gold" size="md" type="submit" icon={<Lock className="w-4 h-4 text-slate-900" />}>
-                Pay Escrow & Request Booking
+              <Button type="submit" variant="gold" size="md" icon={<Lock className="w-4 h-4 text-slate-900" />}>
+                Confirm Booking & Hold Escrow
               </Button>
             </div>
+
           </form>
-        ) : (
-          <div className="text-center py-6 space-y-4">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-10 h-10" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-900">Escrow Locked & Booking Dispatched</h3>
-            <p className="text-xs text-slate-600 max-w-sm mx-auto">
-              Your request has been sent to <span className="font-semibold">{artisan.name}</span>. Funds of <span className="font-bold text-artiva-teal-dark">{formatCurrency(artisan.hourlyRate * hours)}</span> are locked in escrow.
-            </p>
-            <Button
-              variant="primary"
-              fullWidth
-              onClick={() => {
-                setIsBookingModalOpen(false);
-                navigate('/bookings');
-              }}
-            >
-              Go to Bookings Dashboard
-            </Button>
-          </div>
-        )}
-      </Modal>
+        </Modal>
+      )}
 
     </div>
   );
