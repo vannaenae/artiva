@@ -4,6 +4,9 @@ import plumberWorkImg from '../assets/images/plumber_work.jpg';
 import electricianWorkImg from '../assets/images/electrician_work.jpg';
 import cleanerWorkImg from '../assets/images/cleaner_work.jpg';
 import acWorkImg from '../assets/images/ac_work.jpg';
+import headshotTechnicianImg from '../assets/images/headshot_technician.jpg';
+import headshotCarpenterImg from '../assets/images/headshot_carpenter.jpg';
+import headshotPainterImg from '../assets/images/headshot_painter.jpg';
 
 export const ESTATES: Estate[] = [
   {
@@ -225,7 +228,7 @@ export const SEED_ARTISANS: Artisan[] = [
     bio: 'Specialist repairer for Samsung, LG, Hisense washing machines, double-door refrigerators, and electric cookers.',
     skills: ['Washing Machines', 'Refrigerators', 'Microwaves', 'Electric Stoves'],
     idDocumentUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
-    photoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80',
+    photoUrl: headshotTechnicianImg, // Authentic Nigerian technician headshot!
     completedJobsCount: 19,
     disputeCount: 0,
     memberSince: 'Apr 2024',
@@ -249,16 +252,155 @@ export const SEED_ARTISANS: Artisan[] = [
     bio: 'Craftsman specializing in modern wood furniture, wardrobe repair, lock replacement, and custom wooden doors.',
     skills: ['Wardrobe Fitting', 'Door Locks', 'Kitchen Cabinets', 'Wood Restoration'],
     idDocumentUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
-    photoUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80',
+    photoUrl: headshotCarpenterImg, // Authentic Nigerian carpenter headshot!
     completedJobsCount: 8,
     disputeCount: 0,
     memberSince: 'May 2024',
     verificationSubmittedAt: '2024-05-20T08:45:00Z',
+  },
+  {
+    id: 'art-7',
+    name: 'Sunday Akpan',
+    phone: '+234 813 666 3344',
+    email: 'sunday.painting@artiva.ng',
+    category: 'painting',
+    categoryLabel: 'Master Painter & Wall Finisher',
+    estateId: 'est-4',
+    estateName: 'Chevron Drive Estate',
+    distanceKm: 3.5,
+    rating: 4.9,
+    reviewCount: 27,
+    hourlyRate: 8000,
+    inspectionFee: 2500,
+    verificationStatus: 'pending',
+    bio: 'High-end interior and exterior painting service with Dulux and Berger paints. POP ceiling repairs and moisture treatment.',
+    skills: ['Interior Painting', 'POP Ceiling', 'Moisture Treatment', 'Wallpaper Fixing'],
+    idDocumentUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
+    photoUrl: headshotPainterImg, // Authentic Nigerian painter headshot!
+    completedJobsCount: 14,
+    disputeCount: 0,
+    memberSince: 'Jun 2024',
+    verificationSubmittedAt: '2024-06-01T12:00:00Z',
+  },
+  {
+    id: 'art-8',
+    name: 'Kafayat Danjuma',
+    phone: '+234 708 999 0011',
+    email: 'kafayat.clean@artiva.ng',
+    category: 'cleaning',
+    categoryLabel: 'Residential Cleaning Specialist',
+    estateId: 'est-2',
+    estateName: 'Victoria Garden City (VGC)',
+    distanceKm: 1.1,
+    rating: 4.9,
+    reviewCount: 41,
+    hourlyRate: 11000,
+    inspectionFee: 2500,
+    verificationStatus: 'verified',
+    bio: 'Punctual and meticulous residential cleaner specializing in post-party cleanups, kitchen degreasing, and laundry services.',
+    skills: ['Kitchen Degreasing', 'Window Cleaning', 'Deep Scrubbing', 'Laundry & Ironing'],
+    idDocumentUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
+    photoUrl: cleanerWorkImg,
+    completedJobsCount: 52,
+    disputeCount: 0,
+    memberSince: 'Oct 2023',
+  },
+  {
+    id: 'art-9',
+    name: 'Usman Garba',
+    phone: '+234 803 888 7766',
+    email: 'usman.plumb@artiva.ng',
+    category: 'plumbing',
+    categoryLabel: 'Borehole & Sewerage Specialist',
+    estateId: 'est-3',
+    estateName: 'Ikota Villa Estate',
+    distanceKm: 0.6,
+    rating: 4.75,
+    reviewCount: 30,
+    hourlyRate: 8000,
+    inspectionFee: 3000,
+    verificationStatus: 'verified',
+    bio: '10+ years fixing estate drainage, sewage lines, soakaway systems, and submerged water pumps.',
+    skills: ['Soakaway Clearing', 'Submersible Pumps', 'Drain Unblocking'],
+    idDocumentUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
+    photoUrl: plumberWorkImg,
+    completedJobsCount: 36,
+    disputeCount: 0,
+    memberSince: 'Dec 2023',
+  },
+  {
+    id: 'art-10',
+    name: 'Victor Ehis',
+    phone: '+234 814 111 4433',
+    email: 'victor.elec@artiva.ng',
+    category: 'electrical',
+    categoryLabel: 'Power & Generator Technician',
+    estateId: 'est-4',
+    estateName: 'Chevron Drive Estate',
+    distanceKm: 0.5,
+    rating: 4.8,
+    reviewCount: 23,
+    hourlyRate: 9000,
+    inspectionFee: 3500,
+    verificationStatus: 'verified',
+    bio: 'Specialist in Mikano, Perkins, and Caterpillar generator servicing, ATS panel wiring, and solar battery replacements.',
+    skills: ['Generator Servicing', 'ATS Wiring', 'Solar Battery Maintenance'],
+    idDocumentUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
+    photoUrl: electricianWorkImg,
+    completedJobsCount: 28,
+    disputeCount: 0,
+    memberSince: 'Jan 2024',
+  },
+  {
+    id: 'art-12',
+    name: 'Tariq Alabi',
+    phone: '+234 805 000 1122',
+    email: 'tariq.carpenter@artiva.ng',
+    category: 'carpentry',
+    categoryLabel: 'Kitchen Cabinet & Roof Carpenter',
+    estateId: 'est-2',
+    estateName: 'Victoria Garden City (VGC)',
+    distanceKm: 2.1,
+    rating: 4.65,
+    reviewCount: 14,
+    hourlyRate: 8500,
+    inspectionFee: 3000,
+    verificationStatus: 'pending',
+    bio: 'Expert installer of granite kitchen islands, soft-close wardrobe hinges, and wooden pergolas.',
+    skills: ['Kitchen Cabinets', 'Pergolas', 'Roofing Trusses'],
+    idDocumentUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
+    photoUrl: headshotCarpenterImg,
+    completedJobsCount: 11,
+    disputeCount: 0,
+    memberSince: 'Apr 2024',
+    verificationSubmittedAt: '2024-04-18T11:00:00Z',
+  },
+  {
+    id: 'art-13',
+    name: 'Kelvin Obi',
+    phone: '+234 811 222 3344',
+    email: 'kelvin.paint@artiva.ng',
+    category: 'painting',
+    categoryLabel: 'Decorative Painter & Screeder',
+    estateId: 'est-3',
+    estateName: 'Ikota Villa Estate',
+    distanceKm: 1.5,
+    rating: 4.7,
+    reviewCount: 16,
+    hourlyRate: 7500,
+    inspectionFee: 2500,
+    verificationStatus: 'verified',
+    bio: 'Wall screeding, stucco painting, 3D epoxy floor coatings, and exterior damp-proofing.',
+    skills: ['Wall Screeding', 'Epoxy Flooring', 'Stucco Paint'],
+    idDocumentUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
+    photoUrl: headshotPainterImg,
+    completedJobsCount: 17,
+    disputeCount: 0,
+    memberSince: 'Mar 2024',
   }
 ];
 
 export const SEED_BOOKINGS: Booking[] = [
-  // Edge Case 1: Inspection Requested (On-site diagnosis pending)
   {
     id: 'bk-111',
     residentId: 'res-1',
@@ -274,7 +416,7 @@ export const SEED_BOOKINGS: Booking[] = [
     preferredTime: '11:00 AM',
     pricingType: 'inspection_first',
     inspectionFee: 3000,
-    totalAmount: 3000, // Nominal inspection fee locked in escrow
+    totalAmount: 3000,
     escrowStatus: 'held',
     status: 'inspection_requested',
     residentConfirmed: false,
@@ -282,7 +424,6 @@ export const SEED_BOOKINGS: Booking[] = [
     createdAt: '2026-08-17T09:00:00Z',
     updatedAt: '2026-08-17T09:00:00Z',
   },
-  // Edge Case 2: Quote Pending (Artisan inspected & submitted custom quote ₦28,000 for materials + repair)
   {
     id: 'bk-112',
     residentId: 'res-3',
@@ -298,7 +439,7 @@ export const SEED_BOOKINGS: Booking[] = [
     preferredTime: '02:00 PM',
     pricingType: 'inspection_first',
     inspectionFee: 3500,
-    customQuoteAmount: 28000, // Artisan's proposed price for materials + work
+    customQuoteAmount: 28000,
     quoteNotes: 'Requires replacing 3 Schneider 40A circuit breakers and rewiring transfer switch trunking.',
     totalAmount: 28000,
     escrowStatus: 'held',
@@ -308,7 +449,6 @@ export const SEED_BOOKINGS: Booking[] = [
     createdAt: '2026-08-16T14:00:00Z',
     updatedAt: '2026-08-17T08:30:00Z',
   },
-  // Standard requested
   {
     id: 'bk-101',
     residentId: 'res-1',
@@ -332,7 +472,6 @@ export const SEED_BOOKINGS: Booking[] = [
     createdAt: '2026-08-17T08:00:00Z',
     updatedAt: '2026-08-17T08:00:00Z',
   },
-  // accepted
   {
     id: 'bk-103',
     residentId: 'res-1',
@@ -356,7 +495,6 @@ export const SEED_BOOKINGS: Booking[] = [
     createdAt: '2026-08-16T15:00:00Z',
     updatedAt: '2026-08-16T16:30:00Z',
   },
-  // in_progress
   {
     id: 'bk-105',
     residentId: 'res-1',
@@ -380,7 +518,6 @@ export const SEED_BOOKINGS: Booking[] = [
     createdAt: '2026-08-17T07:00:00Z',
     updatedAt: '2026-08-17T09:00:00Z',
   },
-  // completed
   {
     id: 'bk-106',
     residentId: 'res-5',
@@ -404,7 +541,6 @@ export const SEED_BOOKINGS: Booking[] = [
     createdAt: '2026-08-15T09:00:00Z',
     updatedAt: '2026-08-16T14:00:00Z',
   },
-  // paid_out
   {
     id: 'bk-107',
     residentId: 'res-1',
@@ -428,7 +564,6 @@ export const SEED_BOOKINGS: Booking[] = [
     createdAt: '2026-08-11T10:00:00Z',
     updatedAt: '2026-08-12T17:00:00Z',
   },
-  // disputed
   {
     id: 'bk-110',
     residentId: 'res-2',
