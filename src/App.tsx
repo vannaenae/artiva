@@ -17,6 +17,7 @@ import { DisputesPage } from './pages/DisputesPage';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
+import { ProfilePage } from './pages/ProfilePage';
 
 const RouterContent: React.FC = () => {
   const { currentPath, currentRole } = useApp();
@@ -43,6 +44,9 @@ const RouterContent: React.FC = () => {
     }
     if (currentPath === '/verification') {
       return <ArtisanVerificationPage />;
+    }
+    if (currentPath === '/profile') {
+      return <ProfilePage />;
     }
     
     // Secret Admin Access Portal Route
