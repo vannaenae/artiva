@@ -104,3 +104,24 @@ Then point your Paystack dashboard's webhook URL at the deployed
 `paystackWebhook` function, and note that live Transfers also require your
 Paystack *business* account to have completed its own KYC with Paystack —
 a manual step on paystack.com this can't do for you.
+
+---
+
+## 📱 6. iOS App (TestFlight)
+
+`ios/` wraps the same `dist/` build Firebase Hosting serves in a native
+[Capacitor](https://capacitorjs.com/) shell (bundle ID `com.artiva.app`), so
+it can be archived in Xcode and shipped to TestFlight. Locally:
+
+```bash
+npm run ios:open   # builds the web app, syncs it into ios/, opens Xcode (macOS only)
+```
+
+`.github/workflows/testflight-deploy.yml` automates the build-and-upload on
+a macOS GitHub Actions runner via fastlane — trigger it manually from the
+Actions tab once the required Apple Developer / App Store Connect secrets
+are in place. See **[`docs/TESTFLIGHT_SETUP.md`](docs/TESTFLIGHT_SETUP.md)**
+for the full one-time setup checklist (Apple Developer enrollment, App
+Store Connect app record, signing certificate, provisioning profile, API
+key) and the exact repo secrets to add — none of which can be done from
+this repo itself.
