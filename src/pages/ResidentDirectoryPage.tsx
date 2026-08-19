@@ -112,6 +112,7 @@ export const ResidentDirectoryPage: React.FC = () => {
   const handleConfirmBookingWithPaystack = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedArtisanForBooking || !serviceDescription.trim()) return;
+    if (selectedArtisanForBooking.unavailableDates?.includes(preferredDate)) return;
 
     const amountInNaira = pricingType === 'inspection_first'
       ? (selectedArtisanForBooking.inspectionFee || 3000)
@@ -364,6 +365,13 @@ export const ResidentDirectoryPage: React.FC = () => {
               />
             </div>
 
+            {selectedArtisanForBooking.unavailableDates?.includes(preferredDate) && (
+              <p className="text-[11px] text-rose-600 font-semibold flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                {selectedArtisanForBooking.name} has marked this date unavailable — pick another.
+              </p>
+            )}
+
             {/* Paystack Escrow Summary */}
             <div className="p-3 bg-slate-900 text-white rounded-artiva flex items-center justify-between text-xs">
               <div>
@@ -393,7 +401,7 @@ export const ResidentDirectoryPage: React.FC = () => {
               <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedArtisanForBooking(null)}>
                 Cancel
               </Button>
-              <Button type="submit" variant="gold" size="md" disabled={isPaying} icon={<CreditCard className="w-4 h-4 text-slate-900" />}>
+              <Button type="submit" variant="gold" size="md" disabled={isPaying || selectedArtisanForBooking.unavailableDates?.includes(preferredDate)} icon={<CreditCard className="w-4 h-4 text-slate-900" />}>
                 {isPaying ? 'Opening Paystack…' : 'Pay via Paystack & Lock Escrow'}
               </Button>
             </div>

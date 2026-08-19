@@ -59,6 +59,10 @@ export interface Artisan {
    * lib/ninVerify.ts. Never required — manual document review (above)
    * is the verification path that always works. */
   ninNumber?: string;
+  /** Dates (YYYY-MM-DD) the artisan has manually blocked off as
+   * unavailable. Residents get a clear warning before booking one of
+   * these rather than a request the artisan will just decline. */
+  unavailableDates?: string[];
   photoUrl: string;
   completedJobsCount: number;
   disputeCount: number;

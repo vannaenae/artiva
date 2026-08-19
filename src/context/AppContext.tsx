@@ -86,6 +86,7 @@ interface AppContextType {
   // Artisans & Verification State Machine
   artisans: Artisan[];
   verifyArtisan: (artisanId: string, status: VerificationStatus, rejectionReason?: string) => void;
+  setArtisanAvailability: (artisanId: string, unavailableDates: string[]) => void;
   
   // Residents List
   residents: Resident[];
@@ -491,6 +492,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const setArtisanAvailability = (artisanId: string, unavailableDates: string[]) => {
+    setArtisans(prev => prev.map(a => a.id === artisanId ? { ...a, unavailableDates } : a));
+  };
+
   const createBooking = (
     artisanId: string,
     serviceDescription: string,
@@ -764,6 +769,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       requestUserLocation,
       artisans,
       verifyArtisan,
+      setArtisanAvailability,
       residents,
       bookings,
       createBooking,
