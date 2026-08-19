@@ -5,7 +5,8 @@ import { ServiceCategory } from '../types';
 import { Input, Select } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-import { ShieldCheck, Award, Upload, CheckCircle2 } from 'lucide-react';
+import { geocodeAddress } from '../lib/geocode';
+import { ShieldCheck, Award, Upload, CheckCircle2, MapPin } from 'lucide-react';
 
 export const ArtisanVerificationPage: React.FC = () => {
   const { artisans, signupArtisan, userSession, selectedEstate } = useApp();
@@ -17,17 +18,31 @@ export const ArtisanVerificationPage: React.FC = () => {
   const [hourlyRate, setHourlyRate] = useState<number>(8500);
   const [bio, setBio] = useState<string>(currentArtisan?.bio || '');
   const [skills, setSkills] = useState<string>('');
+  const [address, setAddress] = useState<string>(currentArtisan?.address || '');
   const [idPhotoUrl, setIdPhotoUrl] = useState<string>('');
   const [submitted, setSubmitted] = useState<boolean>(currentArtisan?.verificationStatus === 'pending');
+  const [isLocating, setIsLocating] = useState<boolean>(false);
 
   const handleIdFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) setIdPhotoUrl(URL.createObjectURL(file));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!idPhotoUrl) return;
+
+    // Best-effort: pin the artisan to their real address for accurate
+    // proximity sorting. If geocoding fails (unreachable, address doesn't
+    // resolve, etc.) they still get registered — signupArtisan falls back
+    // to the estate's centroid, same as leaving this field blank.
+    let coords: { lat: number; lng: number } | null = null;
+    if (address.trim()) {
+      setIsLocating(true);
+      coords = await geocodeAddress(`${address}, ${selectedEstate.name}, Lagos, Nigeria`);
+      setIsLocating(false);
+    }
+
     signupArtisan({
       name,
       category,
@@ -36,6 +51,9 @@ export const ArtisanVerificationPage: React.FC = () => {
       bio,
       skills: skills.split(',').map(s => s.trim()).filter(Boolean),
       idDocumentUrl: idPhotoUrl,
+      address: address.trim() || undefined,
+      lat: coords?.lat,
+      lng: coords?.lng,
     });
     setSubmitted(true);
   };
@@ -95,6 +113,15 @@ export const ArtisanVerificationPage: React.FC = () => {
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
+        />
+
+        <Input
+          label="Service Address (Optional)"
+          icon={<MapPin className="w-4 h-4 text-slate-400" />}
+          placeholder="e.g. 12 Admiralty Way, Lekki Phase 1"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          helperText="Pins your exact location for accurate proximity sorting. Leave blank to use your estate's general location."
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -171,10 +198,10 @@ export const ArtisanVerificationPage: React.FC = () => {
             variant="primary"
             size="lg"
             type="submit"
-            disabled={!idPhotoUrl}
+            disabled={!idPhotoUrl || isLocating}
             icon={<ShieldCheck className="w-4 h-4" />}
           >
-            Submit for Admin Verification
+            {isLocating ? 'Locating address…' : 'Submit for Admin Verification'}
           </Button>
         </div>
 

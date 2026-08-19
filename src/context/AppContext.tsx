@@ -302,11 +302,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       categoryLabel: artisanData.categoryLabel || 'Plumbing',
       estateId: selectedEstate.id,
       estateName: selectedEstate.name,
-      // ponytail: no precise address geocoding yet, so new artisans are pinned to
-      // their estate's coordinates. Upgrade to a real geocoded address if/when
-      // artisans start entering a specific street address.
-      lat: selectedEstate.lat,
-      lng: selectedEstate.lng,
+      // If the artisan's real address was geocoded (see ArtisanVerificationPage
+      // + lib/geocode.ts), use that for accurate proximity sorting. Otherwise
+      // fall back to the estate's centroid — still a reasonable approximation.
+      lat: artisanData.lat ?? selectedEstate.lat,
+      lng: artisanData.lng ?? selectedEstate.lng,
+      address: artisanData.address,
       rating: 5.0,
       reviewCount: 0,
       hourlyRate: artisanData.hourlyRate || 8500,
