@@ -16,6 +16,7 @@ import {
 import { ESTATES, SEED_ARTISANS, SEED_RESIDENTS, SEED_BOOKINGS, SEED_DISPUTES } from '../data/seedData';
 import { DEFAULT_AVATAR } from '../lib/utils';
 import { startPhoneSignIn, confirmPhoneSignIn, OtpSession } from '../lib/phoneAuth';
+import { checkOtpRateLimit } from '../lib/otpRateLimit';
 import { upsertUserProfile } from '../lib/firestoreUsers';
 import { isFirebaseConfigured } from '../lib/firebase';
 import { subscribeToBookings, saveBooking } from '../lib/firestoreBookings';
@@ -386,6 +387,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setOtpLoading(true);
     setOtpError(null);
     try {
+      const rateCheck = await checkOtpRateLimit(phone);
+      if (!rateCheck.allowed) {
+        throw new Error(rateCheck.message || 'Too many attempts. Please wait and try again.');
+      }
       const session = await startPhoneSignIn(phone, RECAPTCHA_CONTAINER_ID);
       setOtpSession(session);
     } catch (err) {
