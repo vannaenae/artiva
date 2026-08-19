@@ -5,6 +5,7 @@ import { StatusPill, EscrowBadge } from '../components/ui/StatusPill';
 import { Button } from '../components/ui/Button';
 import { DisputeModal } from '../components/dispute/DisputeModal';
 import { formatCurrency, formatDate } from '../lib/utils';
+import { buildWhatsAppShareUrl } from '../lib/whatsapp';
 import { 
   Calendar, 
   Clock, 
@@ -17,7 +18,8 @@ import {
   ArrowLeft,
   RefreshCw,
   PhoneCall,
-  Check
+  Check,
+  MessageCircle
 } from 'lucide-react';
 
 export const BookingDetailPage: React.FC = () => {
@@ -156,6 +158,17 @@ export const BookingDetailPage: React.FC = () => {
               <p className="flex items-center gap-1 text-slate-500">
                 <PhoneCall className="w-3.5 h-3.5 text-slate-400" /> {booking.residentPhone}
               </p>
+              <a
+                href={buildWhatsAppShareUrl(
+                  `Hi ${booking.residentName}, this is regarding your Artiva booking: "${booking.serviceDescription}".`,
+                  booking.residentPhone
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-emerald-600 font-semibold hover:underline"
+              >
+                <MessageCircle className="w-3.5 h-3.5" /> Message on WhatsApp
+              </a>
             </div>
           </div>
         </div>

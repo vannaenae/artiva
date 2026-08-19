@@ -5,6 +5,7 @@ import { StatusPill, EscrowBadge } from '../ui/StatusPill';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { formatCurrency, formatDate, DEFAULT_AVATAR } from '../../lib/utils';
+import { shareViaWhatsApp } from '../../lib/whatsapp';
 import { 
   Calendar, 
   Clock, 
@@ -24,7 +25,8 @@ import {
   KeyRound,
   PlusCircle,
   Award,
-  Share2
+  Share2,
+  MessageCircle
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -96,6 +98,12 @@ export const BookingCard: React.FC<BookingCardProps> = ({
     }
   };
 
+  const handleShareGateCodeOnWhatsApp = () => {
+    shareViaWhatsApp(
+      `Hi, your Artiva estate gate pass for ${booking.residentEstate} is: ${gateCodeToDisplay}. Show this to security at the gate.`
+    );
+  };
+
   return (
     <Card className="space-y-4 hover-lift">
       {/* Header & Status */}
@@ -158,13 +166,22 @@ export const BookingCard: React.FC<BookingCardProps> = ({
                   <span className="font-mono text-sm font-extrabold text-amber-300 tracking-wider">{gateCodeToDisplay}</span>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleCopyGateCode}
-                className="px-2.5 py-1 rounded bg-slate-800 text-slate-200 text-xs font-bold hover:bg-slate-700 transition-all flex items-center gap-1 shrink-0"
-              >
-                <Share2 className="w-3 h-3" /> {gateCodeCopied ? 'Copied!' : 'Share Code'}
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleShareGateCodeOnWhatsApp}
+                  className="px-2.5 py-1 rounded bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 transition-all flex items-center gap-1"
+                >
+                  <MessageCircle className="w-3 h-3" /> WhatsApp
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyGateCode}
+                  className="px-2.5 py-1 rounded bg-slate-800 text-slate-200 text-xs font-bold hover:bg-slate-700 transition-all flex items-center gap-1"
+                >
+                  <Share2 className="w-3 h-3" /> {gateCodeCopied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
             </div>
           )}
 
