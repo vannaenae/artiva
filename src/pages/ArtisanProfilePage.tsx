@@ -22,17 +22,30 @@ import {
   ArrowLeft,
   Eye,
   AlertCircle,
-  CreditCard
+  CreditCard,
+  Heart
 } from 'lucide-react';
 
 export const ArtisanProfilePage: React.FC = () => {
-  const { currentPath, navigate, artisans, userSession, selectedEstate, userLocation, createBooking } = useApp();
+  const {
+    currentPath,
+    navigate,
+    artisans,
+    userSession,
+    currentRole,
+    selectedEstate,
+    userLocation,
+    createBooking,
+    favoriteArtisanIds,
+    toggleFavoriteArtisan,
+  } = useApp();
 
   // Extract artisan ID from route hash e.g. /artisan/art-1
   const artisanId = currentPath.split('/artisan/')[1] || '';
   const artisan = artisans.find(a => a.id === artisanId);
   const distanceOrigin = userLocation || selectedEstate;
   const distanceKm = artisan ? haversineKm(distanceOrigin.lat, distanceOrigin.lng, artisan.lat, artisan.lng) : 0;
+  const isFavorite = artisan ? favoriteArtisanIds.includes(artisan.id) : false;
 
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [serviceDescription, setServiceDescription] = useState('');
@@ -112,13 +125,26 @@ export const ArtisanProfilePage: React.FC = () => {
     <div className="max-w-4xl mx-auto space-y-8 py-4 animate-fade-in">
 
       {/* Back to Directory Button */}
-      <button
-        onClick={() => navigate('/directory')}
-        className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-artiva-teal transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Artisan Directory
-      </button>
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => navigate('/directory')}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-artiva-teal transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Artisan Directory
+        </button>
+
+        {currentRole === 'resident' && userSession && (
+          <button
+            type="button"
+            onClick={() => toggleFavoriteArtisan(artisan.id)}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-rose-600 transition-colors"
+          >
+            <Heart className={`w-4 h-4 ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} />
+            {isFavorite ? 'Saved' : 'Save to Favorites'}
+          </button>
+        )}
+      </div>
 
       {/* Main Profile Header Banner */}
       <div className="bg-white rounded-artiva-lg p-6 sm:p-8 border border-slate-200 shadow-artiva-sm space-y-6">

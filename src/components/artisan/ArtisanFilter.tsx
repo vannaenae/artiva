@@ -1,7 +1,7 @@
 import React from 'react';
 import { CATEGORIES } from '../../data/mockData';
 import { ServiceCategory } from '../../types';
-import { Search, Filter, ShieldCheck, Star, SlidersHorizontal } from 'lucide-react';
+import { Search, Filter, ShieldCheck, Star, SlidersHorizontal, Heart } from 'lucide-react';
 import { Input } from '../ui/Input';
 
 interface ArtisanFilterProps {
@@ -13,6 +13,8 @@ interface ArtisanFilterProps {
   setOnlyVerified: (val: boolean) => void;
   minRating: number;
   setMinRating: (val: number) => void;
+  onlyFavorites?: boolean;
+  setOnlyFavorites?: (val: boolean) => void;
 }
 
 export const ArtisanFilter: React.FC<ArtisanFilterProps> = ({
@@ -24,6 +26,8 @@ export const ArtisanFilter: React.FC<ArtisanFilterProps> = ({
   setOnlyVerified,
   minRating,
   setMinRating,
+  onlyFavorites = false,
+  setOnlyFavorites,
 }) => {
   return (
     <div className="space-y-4 mb-8">
@@ -64,6 +68,21 @@ export const ArtisanFilter: React.FC<ArtisanFilterProps> = ({
             <Star className={`w-4 h-4 ${minRating > 0 ? 'text-amber-500 fill-amber-500' : 'text-slate-400'}`} />
             <span>4.5+ Stars</span>
           </button>
+
+          {/* Favorites Only Filter Toggle */}
+          {setOnlyFavorites && (
+            <button
+              onClick={() => setOnlyFavorites(!onlyFavorites)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-artiva text-xs font-semibold border transition-all ${
+                onlyFavorites
+                  ? 'bg-rose-50 text-rose-800 border-rose-300 shadow-sm'
+                  : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              <Heart className={`w-4 h-4 ${onlyFavorites ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} />
+              <span>Favorites</span>
+            </button>
+          )}
         </div>
       </div>
 
