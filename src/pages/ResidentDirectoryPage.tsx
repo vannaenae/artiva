@@ -140,7 +140,8 @@ export const ResidentDirectoryPage: React.FC = () => {
           preferredDate,
           preferredTime,
           pricingType,
-          estimatedHours
+          estimatedHours,
+          reference
         );
 
         setSelectedArtisanForBooking(null);

@@ -69,7 +69,7 @@ export const ArtisanProfilePage: React.FC = () => {
       email,
       amountInNaira,
       { artisanName: artisan.name, estateName: selectedEstate.name, serviceDescription },
-      () => {
+      (reference) => {
         setIsPaying(false);
         const booking = createBooking(
           artisan.id,
@@ -77,7 +77,8 @@ export const ArtisanProfilePage: React.FC = () => {
           preferredDate,
           preferredTime,
           pricingType,
-          estimatedHours
+          estimatedHours,
+          reference
         );
         setIsBookingModalOpen(false);
         navigate(`/bookings/${booking.id}`);

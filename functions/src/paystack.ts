@@ -7,15 +7,22 @@
  * signatures and calling the Transfer API both have to run somewhere with a
  * server-side secret. Cloud Functions is that somewhere.
  *
- * IMPORTANT — read before deploying: this webhook currently only records
- * verified Paystack events to a `paystackWebhookEvents` audit collection.
- * It does NOT flip a booking's escrowStatus, because bookings don't live in
- * Firestore yet — the app still keeps booking/escrow state in each
- * browser's localStorage (see src/context/AppContext.tsx). Wiring this
- * webhook to actually confirm a booking's payment server-side requires
- * migrating booking storage to Firestore first; until then, this is a real,
- * working signature-verification + audit trail, not a full payment
- * confirmation pipeline.
+ * Bookings now live in Firestore (see src/lib/firestoreBookings.ts), each
+ * one carrying the `paystackReference` its escrow charge was made under
+ * (src/context/AppContext.tsx sets it at creation, from the reference
+ * Paystack Inline JS's success callback returns). That reference is what
+ * lets this webhook find the right booking: on a verified `charge.success`
+ * event, it looks up the booking whose paystackReference matches the
+ * event's reference and stamps it with a server-verified
+ * `paymentVerifiedAt`. That's independent proof the charge really went
+ * through — up to now, "payment succeeded" was purely the client's own
+ * claim, since Paystack Inline JS's onSuccess callback fires in the
+ * browser and nothing forced it to correspond to a real charge.
+ *
+ * This intentionally does not touch escrowStatus/status — those are the
+ * booking's operational state machine (accepted, in_progress, disputed...)
+ * and stay driven by the resident/artisan/admin actions that already run
+ * it. paymentVerifiedAt is an independent, additive confirmation flag.
  */
 
 import { onRequest, onCall, HttpsError } from 'firebase-functions/v2/https';
@@ -58,11 +65,12 @@ export const paystackWebhook = onRequest(
       return;
     }
 
-    const event = req.body as { event?: string; data?: Record<string, unknown> };
+    const event = req.body as { event?: string; data?: { reference?: string; status?: string } & Record<string, unknown> };
     logger.info('paystackWebhook: verified event', { type: event.event });
 
+    const db = getFirestore();
+
     try {
-      const db = getFirestore();
       await db.collection('paystackWebhookEvents').add({
         event: event.event || 'unknown',
         data: event.data || {},
@@ -73,6 +81,26 @@ export const paystackWebhook = onRequest(
       // will retry on non-2xx, and retrying doesn't fix a Firestore issue.
       // Log it loudly instead so it's visible in Cloud Functions logs.
       logger.error('paystackWebhook: failed to persist event', err);
+    }
+
+    if (event.event === 'charge.success' && event.data?.reference) {
+      try {
+        const matches = await db.collection('bookings')
+          .where('paystackReference', '==', event.data.reference)
+          .limit(1)
+          .get();
+
+        if (matches.empty) {
+          // Not necessarily an error — could be a charge from before this
+          // booking existed, a test event, or a reference typo somewhere.
+          logger.warn('paystackWebhook: no booking found for reference', { reference: event.data.reference });
+        } else {
+          await matches.docs[0].ref.update({ paymentVerifiedAt: FieldValue.serverTimestamp() });
+          logger.info('paystackWebhook: booking payment verified', { bookingId: matches.docs[0].id });
+        }
+      } catch (err) {
+        logger.error('paystackWebhook: failed to reconcile booking', err);
+      }
     }
 
     // Paystack expects a fast 200 acknowledging receipt.
@@ -176,9 +204,19 @@ export const initiateArtisanPayout = onCall(
         createdAt: FieldValue.serverTimestamp(),
       });
 
-      // NOTE: this does not flip the booking's status to 'paid_out' —
-      // bookings aren't in Firestore yet (see file-level comment above).
-      // Once they are, update the matching booking doc here.
+      // Paystack transfers usually come back 'success' synchronously for
+      // NUBAN payouts, but can also land as 'pending' (queued for manual
+      // approval on the Paystack dashboard) or 'otp' (needs OTP entry
+      // there) — only a confirmed success updates the booking. A
+      // pending/otp transfer still gets its own payouts record above for
+      // the admin to track; the booking stays wherever it was.
+      if (transferData.data.status === 'success') {
+        await db.collection('bookings').doc(bookingId).update({
+          status: 'paid_out',
+          escrowStatus: 'released',
+          updatedAt: new Date().toISOString(),
+        });
+      }
 
       return { success: true, transferCode: transferData.data.transfer_code, status: transferData.data.status };
     } catch (err) {
