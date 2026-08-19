@@ -23,6 +23,9 @@ export interface Estate {
 
 export interface CustomerReview {
   id: string;
+  /** Which booking this review was left for. Optional because seeded
+   * reviews predate this field — only resident-submitted ones set it. */
+  bookingId?: string;
   residentName: string;
   residentEstate: string;
   rating: number;
@@ -130,6 +133,10 @@ export interface Booking {
   // "payment succeeded" claim is client-only, same as it's always been.
   paystackReference?: string;
   paymentVerifiedAt?: string;
+
+  // Set once the resident leaves a review, so the form doesn't offer to
+  // review the same booking twice.
+  reviewSubmitted?: boolean;
 
   totalAmount: number;
   escrowStatus: EscrowStatus;

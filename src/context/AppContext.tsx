@@ -10,7 +10,8 @@ import {
   VerificationStatus,
   BookingStatus,
   EscrowStatus,
-  PricingType
+  PricingType,
+  CustomerReview
 } from '../types';
 import { ESTATES, SEED_ARTISANS, SEED_RESIDENTS, SEED_BOOKINGS, SEED_DISPUTES } from '../data/seedData';
 import { DEFAULT_AVATAR } from '../lib/utils';
@@ -112,6 +113,10 @@ interface AppContextType {
   startJob: (bookingId: string) => void;
   completeJobByArtisan: (bookingId: string) => void;
   confirmJobByResident: (bookingId: string) => void;
+
+  // Resident leaves a rating + comment for the artisan on a confirmed
+  // booking. One review per booking — see Booking.reviewSubmitted.
+  submitReview: (bookingId: string, rating: number, comment: string) => void;
   
   // Disputes
   disputes: Dispute[];
@@ -628,6 +633,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const submitReview = (bookingId: string, rating: number, comment: string) => {
+    const booking = bookings.find(b => b.id === bookingId);
+    if (!booking || booking.reviewSubmitted) return;
+
+    const newReview: CustomerReview = {
+      id: `rev-${Date.now()}`,
+      bookingId,
+      residentName: booking.residentName,
+      residentEstate: booking.residentEstate,
+      rating,
+      date: new Date().toISOString(),
+      comment,
+    };
+
+    // Same as completedJobsCount above — the artisan catalog is still
+    // local/localStorage-backed, not Firestore, so this stays a plain
+    // setArtisans update rather than routing through applyBookingUpdate.
+    setArtisans(prev => prev.map(a => {
+      if (a.id !== booking.artisanId) return a;
+      const newReviewCount = a.reviewCount + 1;
+      const newRating = (a.rating * a.reviewCount + rating) / newReviewCount;
+      return {
+        ...a,
+        reviews: [newReview, ...(a.reviews || [])],
+        reviewCount: newReviewCount,
+        rating: Math.round(newRating * 10) / 10,
+      };
+    }));
+
+    applyBookingUpdate(bookingId, b => ({ ...b, reviewSubmitted: true, updatedAt: new Date().toISOString() }));
+  };
+
   const createDispute = (bookingId: string, reason: string, description: string, evidencePhotoUrl?: string) => {
     const booking = bookings.find(b => b.id === bookingId);
     if (!booking) return;
@@ -735,6 +772,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       startJob,
       completeJobByArtisan,
       confirmJobByResident,
+      submitReview,
       disputes,
       createDispute,
       submitDisputeCounterStatement,
