@@ -16,6 +16,8 @@ import { ESTATES, SEED_ARTISANS, SEED_RESIDENTS, SEED_BOOKINGS, SEED_DISPUTES } 
 import { DEFAULT_AVATAR } from '../lib/utils';
 import { startPhoneSignIn, confirmPhoneSignIn, OtpSession } from '../lib/phoneAuth';
 import { upsertUserProfile } from '../lib/firestoreUsers';
+import { isFirebaseConfigured } from '../lib/firebase';
+import { subscribeToBookings, saveBooking } from '../lib/firestoreBookings';
 
 // Invisible reCAPTCHA needs a DOM node to attach to; App.tsx mounts this once
 // at the root so every page (Login, Signup) can share it.
@@ -53,9 +55,9 @@ interface AppContextType {
   // (AdminLoginPage), which doesn't need OTP since the passcode already
   // gates it. Resident/artisan sign-in goes through the two-step OTP flow
   // below instead.
-  loginWithOtp: (phone: string, role: UserRole) => UserSession;
-  signupResident: (name: string, phone: string, email: string, estateId: string) => UserSession;
-  signupArtisan: (artisanData: Partial<Artisan>) => UserSession;
+  loginWithOtp: (phone: string, role: UserRole, uid?: string) => UserSession;
+  signupResident: (name: string, phone: string, email: string, estateId: string, uid?: string) => UserSession;
+  signupArtisan: (artisanData: Partial<Artisan>, uid?: string) => UserSession;
   updateUserSession: (patch: Partial<Omit<UserSession, 'id' | 'role'>>) => void;
   logout: () => void;
 
@@ -209,16 +211,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('artiva_bookings', JSON.stringify(bookings));
   }, [bookings]);
 
+  // When Firebase is configured and someone's signed in, Firestore becomes
+  // the source of truth for bookings instead of localStorage — this is what
+  // makes a booking visible across devices/browsers instead of stuck in the
+  // one that created it. The listener's own snapshots (including its
+  // near-instant local-cache echo of this browser's own writes) drive
+  // `bookings` state directly; see the mutator functions below, which write
+  // to Firestore instead of calling setBookings when this is active.
+  useEffect(() => {
+    if (!isFirebaseConfigured || !userSession) return;
+    const unsubscribe = subscribeToBookings(userSession.id, currentRole === 'admin', setBookings);
+    return unsubscribe;
+  }, [userSession?.id, currentRole]);
+
   useEffect(() => {
     localStorage.setItem('artiva_disputes', JSON.stringify(disputes));
   }, [disputes]);
 
-  const loginWithOtp = (phone: string, role: UserRole): UserSession => {
+  // `uid` is the real Firebase Auth uid from OTP confirmation, when there is
+  // one (see confirmLoginOtp below). It becomes the session id in place of a
+  // synthetic one — Firestore's security rules for /bookings compare
+  // residentId/artisanId against request.auth.uid, so this alignment is what
+  // makes a signed-in user's own bookings actually readable/writable there.
+  // AdminLoginPage's direct call (no OTP step) omits it and keeps today's
+  // synthetic-id behavior.
+  const loginWithOtp = (phone: string, role: UserRole, uid?: string): UserSession => {
     let session: UserSession;
     if (role === 'resident') {
       const match = residents.find(r => r.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, ''));
       session = match ? {
-        id: match.id,
+        id: uid || match.id,
         name: match.name,
         phone: match.phone,
         email: match.email,
@@ -226,7 +248,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         estateId: match.estateId,
         estateName: match.estateName,
       } : {
-        id: `res-${Date.now()}`,
+        id: uid || `res-${Date.now()}`,
         name: 'New Resident',
         phone,
         role: 'resident',
@@ -236,7 +258,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else if (role === 'artisan') {
       const match = artisans.find(a => a.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, ''));
       session = match ? {
-        id: match.id,
+        id: uid || match.id,
         name: match.name,
         phone: match.phone,
         email: match.email,
@@ -244,7 +266,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         estateId: match.estateId,
         estateName: match.estateName,
       } : {
-        id: `art-${Date.now()}`,
+        id: uid || `art-${Date.now()}`,
         name: 'New Artisan',
         phone,
         role: 'artisan',
@@ -264,10 +286,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return session;
   };
 
-  const signupResident = (name: string, phone: string, email: string, estateId: string): UserSession => {
+  const signupResident = (name: string, phone: string, email: string, estateId: string, uid?: string): UserSession => {
     const estate = ESTATES.find(e => e.id === estateId) || ESTATES[0];
     const newResident: Resident = {
-      id: `res-${Date.now()}`,
+      id: uid || `res-${Date.now()}`,
       name,
       phone,
       email,
@@ -292,9 +314,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return session;
   };
 
-  const signupArtisan = (artisanData: Partial<Artisan>): UserSession => {
+  const signupArtisan = (artisanData: Partial<Artisan>, uid?: string): UserSession => {
     const newArt: Artisan = {
-      id: `art-${Date.now()}`,
+      id: uid || `art-${Date.now()}`,
       name: artisanData.name || 'New Artisan',
       phone: artisanData.phone || '+234 800 000 0000',
       email: artisanData.email || 'artisan@artiva.ng',
@@ -391,7 +413,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const confirmLoginOtp = (code: string, role: Exclude<UserRole, 'admin'>): Promise<UserSession> =>
     withOtpConfirmation(code, (uid, phone) => {
-      const session = loginWithOtp(phone, role);
+      const session = loginWithOtp(phone, role, uid);
       void upsertUserProfile(uid, {
         role: session.role,
         phone: session.phone,
@@ -405,7 +427,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const confirmSignupResidentOtp = (code: string, name: string, email: string, estateId: string): Promise<UserSession> =>
     withOtpConfirmation(code, (uid, phone) => {
-      const session = signupResident(name, phone, email, estateId);
+      const session = signupResident(name, phone, email, estateId, uid);
       void upsertUserProfile(uid, {
         role: session.role,
         phone: session.phone,
@@ -419,7 +441,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const confirmSignupArtisanOtp = (code: string, artisanData: Partial<Artisan>): Promise<UserSession> =>
     withOtpConfirmation(code, (uid, phone) => {
-      const session = signupArtisan({ ...artisanData, phone });
+      const session = signupArtisan({ ...artisanData, phone }, uid);
       void upsertUserProfile(uid, {
         role: session.role,
         phone: session.phone,
@@ -442,6 +464,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return art;
     }));
+  };
+
+  // Single sink for "take this booking, apply this change to it" — every
+  // mutator below hands this the same transform it always computed locally.
+  // What changes is only where the result goes: Firestore when it's driving
+  // `bookings` (see the subscribeToBookings effect above), or straight into
+  // local state otherwise, exactly like before this migration.
+  const applyBookingUpdate = (bookingId: string, updater: (b: Booking) => Booking) => {
+    if (isFirebaseConfigured && userSession) {
+      const current = bookings.find(b => b.id === bookingId);
+      if (current) void saveBooking(updater(current));
+    } else {
+      setBookings(prev => prev.map(b => b.id === bookingId ? updater(b) : b));
+    }
   };
 
   const createBooking = (
@@ -485,133 +521,104 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updatedAt: new Date().toISOString(),
     };
 
-    setBookings(prev => [newBooking, ...prev]);
+    if (isFirebaseConfigured && userSession) {
+      void saveBooking(newBooking);
+    } else {
+      setBookings(prev => [newBooking, ...prev]);
+    }
     return newBooking;
   };
 
   const submitQuoteProposal = (bookingId: string, customAmount: number, quoteNotes: string) => {
-    setBookings(prev => prev.map(b => {
-      if (b.id === bookingId) {
-        return {
-          ...b,
-          customQuoteAmount: customAmount,
-          quoteNotes,
-          totalAmount: customAmount,
-          status: 'quote_pending',
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return b;
+    applyBookingUpdate(bookingId, b => ({
+      ...b,
+      customQuoteAmount: customAmount,
+      quoteNotes,
+      totalAmount: customAmount,
+      status: 'quote_pending',
+      updatedAt: new Date().toISOString(),
     }));
   };
 
   const approveQuoteProposal = (bookingId: string) => {
-    setBookings(prev => prev.map(b => {
-      if (b.id === bookingId) {
-        return {
-          ...b,
-          status: 'accepted',
-          escrowStatus: 'held',
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return b;
+    applyBookingUpdate(bookingId, b => ({
+      ...b,
+      status: 'accepted',
+      escrowStatus: 'held',
+      updatedAt: new Date().toISOString(),
     }));
   };
 
   const rejectQuoteProposal = (bookingId: string) => {
-    setBookings(prev => prev.map(b => {
-      if (b.id === bookingId) {
-        return {
-          ...b,
-          status: 'declined',
-          escrowStatus: 'released',
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return b;
+    applyBookingUpdate(bookingId, b => ({
+      ...b,
+      status: 'declined',
+      escrowStatus: 'released',
+      updatedAt: new Date().toISOString(),
     }));
   };
 
   // Edge Case 2: Artisan requests mid-job supplemental escrow top-up
   const requestSupplementalTopUp = (bookingId: string, amount: number, notes: string) => {
-    setBookings(prev => prev.map(b => {
-      if (b.id === bookingId) {
-        return {
-          ...b,
-          supplementalAmount: amount,
-          supplementalNotes: notes,
-          status: 'supplemental_quote_pending',
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return b;
+    applyBookingUpdate(bookingId, b => ({
+      ...b,
+      supplementalAmount: amount,
+      supplementalNotes: notes,
+      status: 'supplemental_quote_pending',
+      updatedAt: new Date().toISOString(),
     }));
   };
 
   const approveSupplementalTopUp = (bookingId: string) => {
-    setBookings(prev => prev.map(b => {
-      if (b.id === bookingId) {
-        const extra = b.supplementalAmount || 0;
-        return {
-          ...b,
-          totalAmount: b.totalAmount + extra,
-          status: 'in_progress',
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return b;
+    applyBookingUpdate(bookingId, b => ({
+      ...b,
+      totalAmount: b.totalAmount + (b.supplementalAmount || 0),
+      status: 'in_progress',
+      updatedAt: new Date().toISOString(),
     }));
   };
 
   const acceptBooking = (bookingId: string) => {
-    setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'accepted', updatedAt: new Date().toISOString() } : b));
+    applyBookingUpdate(bookingId, b => ({ ...b, status: 'accepted', updatedAt: new Date().toISOString() }));
   };
 
   const declineBooking = (bookingId: string) => {
-    setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'declined', escrowStatus: 'refunded', updatedAt: new Date().toISOString() } : b));
+    applyBookingUpdate(bookingId, b => ({ ...b, status: 'declined', escrowStatus: 'refunded', updatedAt: new Date().toISOString() }));
   };
 
   const startJob = (bookingId: string) => {
-    setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'in_progress', updatedAt: new Date().toISOString() } : b));
+    applyBookingUpdate(bookingId, b => ({ ...b, status: 'in_progress', updatedAt: new Date().toISOString() }));
   };
 
   const completeJobByArtisan = (bookingId: string) => {
     // 48-Hour Auto Release Date calculation
     const autoRelease = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
 
-    setBookings(prev => prev.map(b => {
-      if (b.id === bookingId) {
-        const nextArtisanConfirmed = true;
-        const fullyConfirmed = b.residentConfirmed && nextArtisanConfirmed;
-        return {
-          ...b,
-          artisanConfirmed: true,
-          autoReleaseDate: autoRelease,
-          status: fullyConfirmed ? 'confirmed' : 'completed',
-          escrowStatus: fullyConfirmed ? 'released' : 'held',
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return b;
-    }));
+    applyBookingUpdate(bookingId, b => {
+      const fullyConfirmed = b.residentConfirmed && true;
+      return {
+        ...b,
+        artisanConfirmed: true,
+        autoReleaseDate: autoRelease,
+        status: fullyConfirmed ? 'confirmed' : 'completed',
+        escrowStatus: fullyConfirmed ? 'released' : 'held',
+        updatedAt: new Date().toISOString(),
+      };
+    });
   };
 
   const confirmJobByResident = (bookingId: string) => {
-    setBookings(prev => prev.map(b => {
-      if (b.id === bookingId) {
-        return {
-          ...b,
-          residentConfirmed: true,
-          artisanConfirmed: true,
-          status: 'paid_out',
-          escrowStatus: 'released',
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return b;
+    applyBookingUpdate(bookingId, b => ({
+      ...b,
+      residentConfirmed: true,
+      artisanConfirmed: true,
+      status: 'paid_out',
+      escrowStatus: 'released',
+      updatedAt: new Date().toISOString(),
     }));
 
+    // Artisan directory stats stay local/localStorage-backed — that catalog
+    // hasn't moved to Firestore in this pass, only bookings/escrow have.
     const targetBooking = bookings.find(b => b.id === bookingId);
     if (targetBooking) {
       setArtisans(prev => prev.map(a => a.id === targetBooking.artisanId ? { ...a, completedJobsCount: a.completedJobsCount + 1 } : a));
@@ -639,12 +646,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setDisputes(prev => [newDispute, ...prev]);
 
-    setBookings(prev => prev.map(b => b.id === bookingId ? {
+    applyBookingUpdate(bookingId, b => ({
       ...b,
       status: 'disputed',
       escrowStatus: 'disputed',
-      updatedAt: new Date().toISOString()
-    } : b));
+      updatedAt: new Date().toISOString(),
+    }));
   };
 
   const submitDisputeCounterStatement = (disputeId: string, counterStatement: string, counterEvidenceUrl?: string) => {
@@ -677,16 +684,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const dispute = disputes.find(d => d.id === disputeId);
     if (dispute) {
-      setBookings(prev => prev.map(b => {
-        if (b.id === dispute.bookingId) {
-          return {
-            ...b,
-            status: outcome === 'release_to_artisan' ? 'paid_out' : 'declined',
-            escrowStatus: outcome === 'release_to_artisan' ? 'released' : 'refunded',
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        return b;
+      applyBookingUpdate(dispute.bookingId, b => ({
+        ...b,
+        status: outcome === 'release_to_artisan' ? 'paid_out' : 'declined',
+        escrowStatus: outcome === 'release_to_artisan' ? 'released' : 'refunded',
+        updatedAt: new Date().toISOString(),
       }));
     }
   };
