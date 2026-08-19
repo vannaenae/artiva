@@ -67,7 +67,10 @@ interface AppContextType {
   otpLoading: boolean;
   otpError: string | null;
   requestOtp: (phone: string) => Promise<void>;
-  confirmLoginOtp: (code: string, role: UserRole) => Promise<UserSession>;
+  // 'admin' is intentionally excluded — admin sign-in only happens through
+  // the passcode-gated AdminLoginPage (loginWithOtp above), never through
+  // self-selected OTP sign-in.
+  confirmLoginOtp: (code: string, role: Exclude<UserRole, 'admin'>) => Promise<UserSession>;
   confirmSignupResidentOtp: (code: string, name: string, email: string, estateId: string) => Promise<UserSession>;
   confirmSignupArtisanOtp: (code: string, artisanData: Partial<Artisan>) => Promise<UserSession>;
 
@@ -384,7 +387,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const confirmLoginOtp = (code: string, role: UserRole): Promise<UserSession> =>
+  const confirmLoginOtp = (code: string, role: Exclude<UserRole, 'admin'>): Promise<UserSession> =>
     withOtpConfirmation(code, (uid, phone) => {
       const session = loginWithOtp(phone, role);
       void upsertUserProfile(uid, {
