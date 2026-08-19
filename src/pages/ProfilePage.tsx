@@ -3,7 +3,9 @@ import { useApp } from '../context/AppContext';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { User, Phone, Mail, MapPin, Edit3, Trash2, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Edit3, Trash2, CheckCircle2, ShieldAlert, Bell, BellOff } from 'lucide-react';
+import { isFirebaseConfigured } from '../lib/firebase';
+import { enablePushNotifications } from '../lib/push';
 
 export const ProfilePage: React.FC = () => {
   const { userSession, updateUserSession, logout, selectedEstate } = useApp();
@@ -13,6 +15,21 @@ export const ProfilePage: React.FC = () => {
   const [phone, setPhone] = useState(userSession?.phone || '');
   const [email, setEmail] = useState(userSession?.email || '');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [pushState, setPushState] = useState<'idle' | 'enabling' | 'on' | 'error'>('idle');
+  const [pushError, setPushError] = useState('');
+
+  const handleEnablePush = async () => {
+    if (!userSession) return;
+    setPushState('enabling');
+    setPushError('');
+    const result = await enablePushNotifications(userSession.id);
+    if (result.success) {
+      setPushState('on');
+    } else {
+      setPushState('error');
+      setPushError(result.message || 'Could not enable notifications.');
+    }
+  };
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,6 +141,42 @@ export const ProfilePage: React.FC = () => {
           </div>
         )}
       </Card>
+
+      {/* Push Notifications */}
+      {isFirebaseConfigured && (
+        <Card className="p-4 space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-start gap-2">
+              {pushState === 'on' ? (
+                <Bell className="w-4 h-4 text-artiva-teal mt-0.5 shrink-0" />
+              ) : (
+                <BellOff className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+              )}
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 font-heading">Push Notifications</h4>
+                <p className="text-[11px] text-slate-500">
+                  {pushState === 'on'
+                    ? 'On — you\'ll be notified of booking updates and new messages.'
+                    : 'Get notified when a booking updates or you get a new message.'}
+                </p>
+                {pushState === 'error' && (
+                  <p className="text-[11px] text-rose-600 mt-1">{pushError}</p>
+                )}
+              </div>
+            </div>
+            {pushState !== 'on' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleEnablePush}
+                disabled={pushState === 'enabling'}
+              >
+                {pushState === 'enabling' ? 'Enabling…' : 'Enable'}
+              </Button>
+            )}
+          </div>
+        </Card>
+      )}
 
       {/* Danger Zone: Account Deletion */}
       <Card className="p-4 border-rose-200 bg-rose-50/40 space-y-2">

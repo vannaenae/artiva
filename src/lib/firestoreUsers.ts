@@ -25,6 +25,10 @@ export interface UserProfileDoc {
   email?: string;
   estateId?: string;
   estateName?: string;
+  /** Current FCM registration token, if the user has enabled push
+   * notifications (see lib/push.ts). Cloud Functions reads this to send
+   * booking/message notifications — see functions/src/push.ts. */
+  pushToken?: string;
   createdAt?: unknown;
   updatedAt?: unknown;
 }
@@ -80,6 +84,19 @@ export async function upsertUserProfile(
     // Never block sign-in/sign-up on a Firestore write failing — the app
     // still works off localStorage/seed data either way.
     console.warn('[Artiva Firestore] Failed to save user profile:', err);
+  }
+}
+
+/** Save (or clear, by passing null) this user's current push token. A
+ * plain merge write — doesn't touch any other profile field. */
+export async function savePushToken(uid: string, token: string | null): Promise<void> {
+  const database = getDb();
+  if (!database) return;
+
+  try {
+    await setDoc(doc(database, 'users', uid), { pushToken: token, updatedAt: serverTimestamp() }, { merge: true });
+  } catch (err) {
+    console.warn('[Artiva Firestore] Failed to save push token:', err);
   }
 }
 

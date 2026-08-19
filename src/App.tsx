@@ -1,8 +1,9 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { AppProvider, useApp, RECAPTCHA_CONTAINER_ID } from './context/AppContext';
 import { Navbar } from './components/ui/Navbar';
 import { Footer } from './components/ui/Footer';
 import { RequireAuth } from './components/auth/RequireAuth';
+import { listenForForegroundMessages } from './lib/push';
 
 // Pages Inventory
 // Lazy-loaded so each route's code (and any libraries only it needs, e.g.
@@ -38,6 +39,21 @@ const RouterContent: React.FC = () => {
   // Route matching ignores any ?query string (e.g. /login?next=/bookings) —
   // that's parsed by the page that needs it (LoginPage), not the router.
   const pathname = currentPath.split('?')[0];
+
+  // Background messages are handled by the service worker (see
+  // public/firebase-messaging-sw.js); this covers the other case — the app
+  // tab open and focused, which the service worker's handler never fires
+  // for. Reuses the native Notification UI rather than a custom toast —
+  // permission is already granted by this point (a prerequisite for having
+  // a push token at all), so there's nothing extra to build here.
+  useEffect(() => {
+    const unsubscribe = listenForForegroundMessages((title, body) => {
+      if (Notification.permission === 'granted') {
+        new Notification(title, { body });
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   const renderCurrentRoute = () => {
     if (pathname === '/') {
