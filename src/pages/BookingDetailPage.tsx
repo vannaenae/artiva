@@ -19,21 +19,23 @@ import {
   RefreshCw,
   PhoneCall,
   Check,
-  MessageCircle
+  MessageCircle,
+  Star
 } from 'lucide-react';
 
 export const BookingDetailPage: React.FC = () => {
-  const { 
-    currentPath, 
-    navigate, 
-    bookings, 
-    currentRole, 
-    acceptBooking, 
-    declineBooking, 
-    startJob, 
-    completeJobByArtisan, 
+  const {
+    currentPath,
+    navigate,
+    bookings,
+    currentRole,
+    acceptBooking,
+    declineBooking,
+    startJob,
+    completeJobByArtisan,
     confirmJobByResident,
-    createDispute 
+    submitReview,
+    createDispute
   } = useApp();
 
   // Extract ID from current hash path e.g. /bookings/bk-105
@@ -41,6 +43,10 @@ export const BookingDetailPage: React.FC = () => {
   const booking = bookings.find(b => b.id === bookingId);
 
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState<boolean>(false);
+  const [reviewRating, setReviewRating] = useState<number>(0);
+  const [hoverRating, setHoverRating] = useState<number>(0);
+  const [reviewComment, setReviewComment] = useState<string>('');
+  const [reviewJustSubmitted, setReviewJustSubmitted] = useState<boolean>(false);
 
   if (!booking) {
     return (
@@ -185,6 +191,62 @@ export const BookingDetailPage: React.FC = () => {
             "{booking.serviceDescription}"
           </p>
         </div>
+
+        {/* Leave a Review — resident, once they've confirmed the job's done, once per booking */}
+        {currentRole === 'resident' && booking.residentConfirmed && !booking.reviewSubmitted && (
+          <div className="p-4 rounded-artiva bg-artiva-gold/5 border border-artiva-gold/30 space-y-3">
+            {reviewJustSubmitted ? (
+              <p className="text-xs font-semibold text-emerald-700 flex items-center gap-1.5">
+                <Check className="w-4 h-4" /> Thanks — your review is posted on {booking.artisanName}'s profile.
+              </p>
+            ) : (
+              <>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Rate {booking.artisanName}'s work
+                </span>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewRating(star)}
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      className="p-0.5"
+                      aria-label={`${star} star${star > 1 ? 's' : ''}`}
+                    >
+                      <Star
+                        className={`w-6 h-6 transition-colors ${
+                          star <= (hoverRating || reviewRating)
+                            ? 'fill-artiva-gold text-artiva-gold'
+                            : 'text-slate-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  rows={2}
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="How did the job go? (optional)"
+                  className="w-full rounded-artiva border border-slate-300 p-2.5 text-xs text-slate-900 focus:border-artiva-teal focus:ring-1 focus:ring-artiva-teal outline-none"
+                />
+                <Button
+                  variant="gold"
+                  size="sm"
+                  disabled={reviewRating === 0}
+                  onClick={() => {
+                    submitReview(booking.id, reviewRating, reviewComment.trim() || 'No additional comments.');
+                    setReviewJustSubmitted(true);
+                  }}
+                >
+                  Submit Review
+                </Button>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Interactive Action Bar */}
         <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
