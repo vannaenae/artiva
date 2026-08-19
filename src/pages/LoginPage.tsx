@@ -4,12 +4,14 @@ import { UserRole } from '../types';
 import { isFirebaseConfigured } from '../lib/firebase';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
-import { ShieldCheck, Phone, ArrowRight, User, UserCheck, Shield, KeyRound, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, Phone, ArrowRight, User, UserCheck, KeyRound, ArrowLeft } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { confirmLoginOtp, requestOtp, otpLoading, otpError, navigate, currentPath } = useApp();
 
-  const [role, setRole] = useState<UserRole>('resident');
+  // Admin sign-in only happens through the passcode-gated /admin/secret-portal
+  // — never offer it here, or anyone could self-assign the admin role.
+  const [role, setRole] = useState<Exclude<UserRole, 'admin'>>('resident');
   const [phone, setPhone] = useState<string>('');
   const [code, setCode] = useState<string>('');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
@@ -23,8 +25,6 @@ export const LoginPage: React.FC = () => {
       navigate(nextPath);
     } else if (role === 'artisan') {
       navigate('/artisan-dashboard');
-    } else if (role === 'admin') {
-      navigate('/admin/verifications');
     } else {
       navigate('/');
     }
@@ -72,7 +72,7 @@ export const LoginPage: React.FC = () => {
         {step === 'phone' ? (
           <>
             {/* Role Selector Tabs */}
-            <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-artiva border border-slate-200 text-xs font-bold">
+            <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-artiva border border-slate-200 text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setRole('resident')}
@@ -93,17 +93,6 @@ export const LoginPage: React.FC = () => {
               >
                 <UserCheck className="w-3.5 h-3.5" />
                 Artisan
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setRole('admin')}
-                className={`py-2 rounded flex items-center justify-center gap-1 transition-all ${
-                  role === 'admin' ? 'bg-artiva-gold text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Shield className="w-3.5 h-3.5" />
-                Admin
               </button>
             </div>
 
