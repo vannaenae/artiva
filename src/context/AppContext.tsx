@@ -14,6 +14,12 @@ import {
 } from '../types';
 import { ESTATES, SEED_ARTISANS, SEED_RESIDENTS, SEED_BOOKINGS, SEED_DISPUTES } from '../data/seedData';
 import { DEFAULT_AVATAR } from '../lib/utils';
+import { startPhoneSignIn, confirmPhoneSignIn, OtpSession } from '../lib/phoneAuth';
+import { upsertUserProfile } from '../lib/firestoreUsers';
+
+// Invisible reCAPTCHA needs a DOM node to attach to; App.tsx mounts this once
+// at the root so every page (Login, Signup) can share it.
+export const RECAPTCHA_CONTAINER_ID = 'artiva-recaptcha-container';
 
 interface UserSession {
   id: string;
@@ -42,12 +48,28 @@ interface AppContextType {
   selectedEstate: Estate;
   setSelectedEstate: (estate: Estate) => void;
   
-  // Auth Actions (phone-number sign-in; no real SMS verification is wired up yet — see loginWithOtp)
+  // Auth Actions — phone-number matching against local/seed state, no real
+  // SMS verification. Still used directly by the admin passcode portal
+  // (AdminLoginPage), which doesn't need OTP since the passcode already
+  // gates it. Resident/artisan sign-in goes through the two-step OTP flow
+  // below instead.
   loginWithOtp: (phone: string, role: UserRole) => UserSession;
   signupResident: (name: string, phone: string, email: string, estateId: string) => UserSession;
   signupArtisan: (artisanData: Partial<Artisan>) => UserSession;
   updateUserSession: (patch: Partial<Omit<UserSession, 'id' | 'role'>>) => void;
   logout: () => void;
+
+  // Two-step Firebase Phone Auth (send code → confirm code). Falls back to a
+  // mock flow when Firebase isn't configured — same shape either way, so
+  // Login/Signup pages don't need to branch on it. `requestOtp` is shared by
+  // both login and signup; the `confirm*` step differs by what it does once
+  // the phone is verified.
+  otpLoading: boolean;
+  otpError: string | null;
+  requestOtp: (phone: string) => Promise<void>;
+  confirmLoginOtp: (code: string, role: UserRole) => Promise<UserSession>;
+  confirmSignupResidentOtp: (code: string, name: string, email: string, estateId: string) => Promise<UserSession>;
+  confirmSignupArtisanOtp: (code: string, artisanData: Partial<Artisan>) => Promise<UserSession>;
 
   // Real device geolocation, for "nearest to me" sorting
   userLocation: { lat: number; lng: number } | null;
@@ -321,6 +343,88 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUserSession(null);
     navigate('/');
   };
+
+  // --- Two-step Firebase Phone Auth -----------------------------------
+  const [otpSession, setOtpSession] = useState<OtpSession | null>(null);
+  const [otpLoading, setOtpLoading] = useState<boolean>(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+
+  const requestOtp = async (phone: string) => {
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      const session = await startPhoneSignIn(phone, RECAPTCHA_CONTAINER_ID);
+      setOtpSession(session);
+    } catch (err) {
+      setOtpError(err instanceof Error ? err.message : 'Failed to send verification code.');
+      throw err;
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const withOtpConfirmation = async <T,>(code: string, onVerified: (uid: string, phone: string) => T): Promise<T> => {
+    if (!otpSession) {
+      const err = new Error('Request a verification code first.');
+      setOtpError(err.message);
+      throw err;
+    }
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      const { uid, phone } = await confirmPhoneSignIn(otpSession, code);
+      const result = onVerified(uid, phone);
+      setOtpSession(null);
+      return result;
+    } catch (err) {
+      setOtpError(err instanceof Error ? err.message : 'Verification failed.');
+      throw err;
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const confirmLoginOtp = (code: string, role: UserRole): Promise<UserSession> =>
+    withOtpConfirmation(code, (uid, phone) => {
+      const session = loginWithOtp(phone, role);
+      void upsertUserProfile(uid, {
+        role: session.role,
+        phone: session.phone,
+        name: session.name,
+        email: session.email,
+        estateId: session.estateId,
+        estateName: session.estateName,
+      });
+      return session;
+    });
+
+  const confirmSignupResidentOtp = (code: string, name: string, email: string, estateId: string): Promise<UserSession> =>
+    withOtpConfirmation(code, (uid, phone) => {
+      const session = signupResident(name, phone, email, estateId);
+      void upsertUserProfile(uid, {
+        role: session.role,
+        phone: session.phone,
+        name: session.name,
+        email: session.email,
+        estateId: session.estateId,
+        estateName: session.estateName,
+      });
+      return session;
+    });
+
+  const confirmSignupArtisanOtp = (code: string, artisanData: Partial<Artisan>): Promise<UserSession> =>
+    withOtpConfirmation(code, (uid, phone) => {
+      const session = signupArtisan({ ...artisanData, phone });
+      void upsertUserProfile(uid, {
+        role: session.role,
+        phone: session.phone,
+        name: session.name,
+        email: session.email,
+        estateId: session.estateId,
+        estateName: session.estateName,
+      });
+      return session;
+    });
 
   const verifyArtisan = (artisanId: string, status: VerificationStatus, rejectionReason?: string) => {
     setArtisans(prev => prev.map(art => {
@@ -597,6 +701,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       signupArtisan,
       updateUserSession,
       logout,
+      otpLoading,
+      otpError,
+      requestOtp,
+      confirmLoginOtp,
+      confirmSignupResidentOtp,
+      confirmSignupArtisanOtp,
       userLocation,
       locationStatus,
       requestUserLocation,
