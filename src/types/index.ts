@@ -41,6 +41,9 @@ export interface Artisan {
   estateName: string;
   lat: number;
   lng: number;
+  /** Free-text service address, if the artisan provided one to geocode.
+   * Falls back to the estate centroid (lat/lng above) when absent. */
+  address?: string;
   rating: number;
   reviewCount: number;
   hourlyRate: number;
