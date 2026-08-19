@@ -39,6 +39,6 @@ jobs:
         run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ARTIVA_HUB }}' > "$RUNNER_TEMP/firebase-service-account.json"
 
       - name: Deploy Hosting + Firestore/Storage rules
-        run: npx firebase-tools deploy --only hosting,firestore:rules,storage:rules --project artiva-hub --non-interactive
+        run: npx firebase-tools deploy --only hosting,firestore:rules,storage --project artiva-hub --non-interactive
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
