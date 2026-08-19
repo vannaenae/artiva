@@ -49,3 +49,45 @@ npm run dev
 # Run TypeScript compilation check & Vite production build
 npm run build
 ```
+
+---
+
+## ☁️ 5. Cloud Functions Backend (`functions/`)
+
+The frontend is a static SPA, which means two things can't safely happen in
+client code: verifying Paystack webhook signatures, and calling Paystack's
+Transfer API to pay artisans out — both need a secret key that must never
+ship to the browser. `functions/` is a small Firebase Cloud Functions
+(2nd gen) project that holds that secret server-side:
+
+- **`paystackWebhook`** — an HTTPS endpoint that verifies Paystack's
+  `x-paystack-signature` header (HMAC-SHA512 of the raw body) and logs
+  verified events to a `paystackWebhookEvents` Firestore collection.
+- **`initiateArtisanPayout`** — an admin-only callable that creates a
+  Paystack transfer recipient and pays an artisan via the Transfer API,
+  recording the attempt/result to a `payouts` Firestore collection.
+- **`verifyAdminPasscode`** — an admin-only callable that checks the admin
+  passcode server-side and grants a real Firebase Auth custom claim
+  (`admin: true`), instead of the passcode comparison in `AdminLoginPage`
+  happening client-side (which ships in the built JS bundle, and is
+  documented as such in `.env.example`).
+
+**Known gap:** `paystackWebhook` only logs verified events — it does not
+flip a booking's escrow status, because bookings still live in each
+browser's `localStorage`, not Firestore (see section 3 above). Wiring real
+payment confirmation end-to-end needs that migration done first.
+
+**To deploy:**
+
+```bash
+cd functions
+npm install
+firebase functions:secrets:set PAYSTACK_SECRET_KEY   # your Paystack secret key
+firebase functions:secrets:set ADMIN_PASSCODE         # matches VITE_ADMIN_PASSCODE
+firebase deploy --only functions
+```
+
+Then point your Paystack dashboard's webhook URL at the deployed
+`paystackWebhook` function, and note that live Transfers also require your
+Paystack *business* account to have completed its own KYC with Paystack —
+a manual step on paystack.com this can't do for you.
