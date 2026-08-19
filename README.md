@@ -77,6 +77,11 @@ ship to the browser. `functions/` is a small Firebase Cloud Functions
   function can read or write. `AppContext.requestOtp` calls it before
   sending an SMS, so a blocked request never touches Firebase's (billed)
   SMS quota.
+- **`notifyOnBookingStatusChange`** / **`notifyOnNewMessage`** — Firestore
+  triggers that notify the relevant user(s) on a booking status change or
+  a new chat message. Sends via push (FCM) if the recipient has enabled
+  it; otherwise falls back to SMS via Termii, if `TERMII_API_KEY` is set —
+  push and SMS are alternatives, never both for the same event.
 
 Bookings live in Firestore (`src/lib/firestoreBookings.ts`), each carrying
 the `paystackReference` it was charged under — `paystackWebhook` uses that
@@ -91,6 +96,7 @@ cd functions
 npm install
 firebase functions:secrets:set PAYSTACK_SECRET_KEY   # your Paystack secret key
 firebase functions:secrets:set ADMIN_PASSCODE         # matches VITE_ADMIN_PASSCODE
+firebase functions:secrets:set TERMII_API_KEY         # optional — enables SMS fallback
 firebase deploy --only functions
 ```
 
