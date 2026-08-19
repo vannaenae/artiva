@@ -1,5 +1,5 @@
 import React from 'react';
-import { AppProvider, useApp } from './context/AppContext';
+import { AppProvider, useApp, RECAPTCHA_CONTAINER_ID } from './context/AppContext';
 import { Navbar } from './components/ui/Navbar';
 import { Footer } from './components/ui/Footer';
 import { RequireAuth } from './components/auth/RequireAuth';
@@ -96,6 +96,9 @@ const RouterContent: React.FC = () => {
         </main>
       </div>
       <Footer />
+      {/* Invisible reCAPTCHA anchor for Firebase Phone Auth (src/lib/phoneAuth.ts).
+          Mounted once here so Login/Signup share a single container id. */}
+      <div id={RECAPTCHA_CONTAINER_ID} />
     </div>
   );
 };
