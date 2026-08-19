@@ -1,19 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { BookingCard } from '../components/booking/BookingCard';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { formatCurrency } from '../lib/utils';
-import { 
-  Briefcase, 
-  DollarSign, 
-  CheckCircle2, 
-  Clock, 
-  Award, 
-  ShieldCheck, 
+import {
+  Briefcase,
+  DollarSign,
+  CheckCircle2,
+  Clock,
+  Award,
+  ShieldCheck,
   AlertCircle,
-  PhoneCall
+  PhoneCall,
+  CalendarOff,
+  X
 } from 'lucide-react';
+
+// Formats a bare 'YYYY-MM-DD' string without going through `new Date()` —
+// that parses date-only strings as UTC midnight, which toLocaleDateString
+// then renders in the browser's local timezone and can shift the day
+// backward for anyone west of UTC (exactly the kind of thing that looks
+// fine in testing and wrong for a real user).
+function formatBlockedDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[month - 1]} ${day}, ${year}`;
+}
 
 export const ArtisanDashboardPage: React.FC = () => {
   const {
@@ -25,8 +38,11 @@ export const ArtisanDashboardPage: React.FC = () => {
     declineBooking,
     startJob,
     completeJobByArtisan,
-    confirmJobByResident
+    confirmJobByResident,
+    setArtisanAvailability
   } = useApp();
+
+  const [newBlockedDate, setNewBlockedDate] = useState('');
 
   const currentArtisan = artisans.find(a => a.id === userSession?.id);
 
@@ -54,6 +70,19 @@ export const ArtisanDashboardPage: React.FC = () => {
   const totalEarningsPaid = artisanBookings
     .filter(b => b.escrowStatus === 'released')
     .reduce((sum, b) => sum + b.totalAmount, 0);
+
+  const blockedDates = [...(currentArtisan.unavailableDates || [])].sort();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const handleBlockDate = () => {
+    if (!newBlockedDate || blockedDates.includes(newBlockedDate)) return;
+    setArtisanAvailability(currentArtisan.id, [...blockedDates, newBlockedDate]);
+    setNewBlockedDate('');
+  };
+
+  const handleUnblockDate = (date: string) => {
+    setArtisanAvailability(currentArtisan.id, blockedDates.filter(d => d !== date));
+  };
 
   return (
     <div className="space-y-6">
@@ -110,6 +139,51 @@ export const ArtisanDashboardPage: React.FC = () => {
           <p className="text-xl font-extrabold text-artiva-teal-dark">{pendingRequests.length + activeJobs.length}</p>
           <p className="text-[10px] text-slate-500">Requires your response or action</p>
         </div>
+      </div>
+
+      {/* Availability */}
+      <div className="bg-white p-5 rounded-artiva border border-slate-200 shadow-artiva-sm space-y-3">
+        <h2 className="text-sm font-bold text-slate-900 font-heading flex items-center gap-2">
+          <CalendarOff className="w-4 h-4 text-artiva-teal" />
+          Blocked Dates
+        </h2>
+        <p className="text-xs text-slate-500">
+          Block a date you're not working — residents see it before booking, instead of a request you'll just decline.
+        </p>
+
+        <div className="flex flex-wrap items-end gap-2">
+          <input
+            type="date"
+            min={today}
+            value={newBlockedDate}
+            onChange={(e) => setNewBlockedDate(e.target.value)}
+            className="rounded-artiva border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-artiva-teal focus:ring-1 focus:ring-artiva-teal outline-none"
+          />
+          <Button variant="outline" size="sm" onClick={handleBlockDate} disabled={!newBlockedDate}>
+            Block Date
+          </Button>
+        </div>
+
+        {blockedDates.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {blockedDates.map((date) => (
+              <span
+                key={date}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-artiva"
+              >
+                {formatBlockedDate(date)}
+                <button
+                  type="button"
+                  onClick={() => handleUnblockDate(date)}
+                  aria-label={`Unblock ${date}`}
+                  className="hover:text-rose-900"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Incoming Booking Requests */}
