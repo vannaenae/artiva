@@ -103,6 +103,11 @@ export const BookingDetailPage: React.FC = () => {
             <span className="text-2xl font-extrabold text-artiva-teal-dark font-heading">
               {formatCurrency(booking.totalAmount)}
             </span>
+            {booking.paymentVerifiedAt && (
+              <span className="mt-1 flex items-center sm:justify-end gap-1 text-[10px] font-bold text-emerald-600">
+                <Check className="w-3 h-3" /> Payment verified by Paystack
+              </span>
+            )}
           </div>
         </div>
 

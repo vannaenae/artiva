@@ -123,6 +123,14 @@ export interface Booking {
   // Edge Case 4: Auto-Release Timer
   autoReleaseDate?: string;
   
+  // Set at booking creation from the Paystack Inline JS success callback;
+  // paymentVerifiedAt is set later, server-side, once the Cloud Functions
+  // webhook independently verifies the matching charge.success event's
+  // signature — see functions/src/paystack.ts. Until that's set, the
+  // "payment succeeded" claim is client-only, same as it's always been.
+  paystackReference?: string;
+  paymentVerifiedAt?: string;
+
   totalAmount: number;
   escrowStatus: EscrowStatus;
   status: BookingStatus;

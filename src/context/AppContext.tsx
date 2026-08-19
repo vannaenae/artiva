@@ -91,12 +91,13 @@ interface AppContextType {
   // Booking & Escrow State Machine
   bookings: Booking[];
   createBooking: (
-    artisanId: string, 
-    serviceDescription: string, 
-    date: string, 
-    time: string, 
+    artisanId: string,
+    serviceDescription: string,
+    date: string,
+    time: string,
     pricingType: PricingType,
-    estimatedHours?: number
+    estimatedHours?: number,
+    paystackReference?: string
   ) => Booking;
   acceptBooking: (bookingId: string) => void;
   declineBooking: (bookingId: string) => void;
@@ -481,12 +482,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const createBooking = (
-    artisanId: string, 
-    serviceDescription: string, 
-    date: string, 
-    time: string, 
+    artisanId: string,
+    serviceDescription: string,
+    date: string,
+    time: string,
     pricingType: PricingType,
-    estimatedHours = 2
+    estimatedHours = 2,
+    paystackReference?: string
   ): Booking => {
     const artisan = artisans.find(a => a.id === artisanId);
     const inspFee = artisan?.inspectionFee || 3000;
@@ -512,6 +514,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       inspectionFee: inspFee,
       estateGateCode: gateCode,
       beforeWorkPhotoUrl: artisan?.photoUrl,
+      paystackReference,
       totalAmount: amount,
       escrowStatus: 'held',
       status: pricingType === 'inspection_first' ? 'inspection_requested' : 'requested',
