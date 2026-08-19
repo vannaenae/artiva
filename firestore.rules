@@ -94,6 +94,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // otpRateLimits/{phone} — written only by the checkOtpRateLimit Cloud
+    // Function (functions/src/otpRateLimit.ts) via the Admin SDK. No client
+    // access at all, including admins — a client that could read or write
+    // its own counter could reset or inspect it, defeating the limit.
+    match /otpRateLimits/{phone} {
+      allow read, write: if false;
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read, write: if false;

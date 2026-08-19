@@ -71,11 +71,18 @@ ship to the browser. `functions/` is a small Firebase Cloud Functions
   (`admin: true`), instead of the passcode comparison in `AdminLoginPage`
   happening client-side (which ships in the built JS bundle, and is
   documented as such in `.env.example`).
+- **`checkOtpRateLimit`** — an unauthenticated callable (there's no session
+  yet at this point in sign-in) that caps OTP requests to 3 per phone
+  number per 15 minutes, enforced via a Firestore-backed counter only this
+  function can read or write. `AppContext.requestOtp` calls it before
+  sending an SMS, so a blocked request never touches Firebase's (billed)
+  SMS quota.
 
-**Known gap:** `paystackWebhook` only logs verified events — it does not
-flip a booking's escrow status, because bookings still live in each
-browser's `localStorage`, not Firestore (see section 3 above). Wiring real
-payment confirmation end-to-end needs that migration done first.
+Bookings live in Firestore (`src/lib/firestoreBookings.ts`), each carrying
+the `paystackReference` it was charged under — `paystackWebhook` uses that
+to find and stamp the matching booking's `paymentVerifiedAt` on a verified
+`charge.success` event, and `initiateArtisanPayout` flips a booking to
+`paid_out` on a successful transfer.
 
 **To deploy:**
 
