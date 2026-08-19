@@ -4,8 +4,10 @@ import { Booking } from '../types';
 import { StatusPill, EscrowBadge } from '../components/ui/StatusPill';
 import { Button } from '../components/ui/Button';
 import { DisputeModal } from '../components/dispute/DisputeModal';
+import { BookingChat } from '../components/booking/BookingChat';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { buildWhatsAppShareUrl } from '../lib/whatsapp';
+import { isFirebaseConfigured } from '../lib/firebase';
 import { 
   Calendar, 
   Clock, 
@@ -307,6 +309,11 @@ export const BookingDetailPage: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Live chat thread — Firestore-only, no localStorage fallback exists
+          for cross-device messaging, so this simply doesn't render in demo
+          mode rather than showing a chat that can't actually sync. */}
+      {isFirebaseConfigured && <BookingChat booking={booking} />}
 
       {/* Dispute Modal */}
       {isDisputeModalOpen && (
