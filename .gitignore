@@ -23,3 +23,18 @@ yarn-error.log*
 
 # System files
 .DS_Store
+
+# iOS (Capacitor + Xcode + fastlane build output — the ios/App source itself is committed)
+ios/App/build
+ios/App/Pods
+ios/App/App/public
+ios/DerivedData
+ios/App/*.xcarchive
+ios/App/fastlane/report.xml
+ios/App/fastlane/Preview.html
+ios/App/fastlane/screenshots
+ios/App/fastlane/test_output
+*.mobileprovision
+*.p12
+*.p8
+*.ipa

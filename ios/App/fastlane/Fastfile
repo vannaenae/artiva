@@ -1,0 +1,62 @@
+default_platform(:ios)
+
+# Builds the Capacitor-wrapped Artiva app and uploads it to TestFlight.
+#
+# This lane is designed to run unattended in CI (see
+# .github/workflows/testflight-deploy.yml), which imports a distribution
+# certificate + App Store provisioning profile into a temporary keychain and
+# writes an App Store Connect API key to disk before calling `fastlane beta`.
+# It does not use `match` — signing assets are supplied as repo secrets
+# instead (see docs/TESTFLIGHT_SETUP.md for the full one-time Apple-side
+# setup this depends on).
+platform :ios do
+  desc "Build a release .ipa and upload it to TestFlight"
+  lane :beta do
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch("APP_STORE_CONNECT_KEY_ID"),
+      issuer_id: ENV.fetch("APP_STORE_CONNECT_ISSUER_ID"),
+      key_filepath: ENV.fetch("APP_STORE_CONNECT_KEY_FILEPATH"),
+      in_house: false,
+    )
+
+    # TestFlight rejects a re-used build number, so bump past whatever was
+    # last uploaded instead of relying on a manually maintained counter.
+    latest_build = latest_testflight_build_number(
+      api_key: api_key,
+      app_identifier: "com.artiva.app",
+    )
+    increment_build_number(
+      xcodeproj: "App.xcodeproj",
+      build_number: latest_build + 1,
+    )
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "App.xcodeproj",
+      code_sign_identity: "Apple Distribution",
+      profile_name: ENV.fetch("PROVISIONING_PROFILE_NAME"),
+      team_id: ENV.fetch("APPLE_TEAM_ID"),
+      bundle_identifier: "com.artiva.app",
+    )
+
+    build_app(
+      project: "App.xcodeproj",
+      scheme: "App",
+      export_method: "app-store",
+      export_team_id: ENV.fetch("APPLE_TEAM_ID"),
+      output_directory: "build",
+      output_name: "Artiva.ipa",
+      export_options: {
+        provisioningProfiles: {
+          "com.artiva.app" => ENV.fetch("PROVISIONING_PROFILE_NAME"),
+        },
+      },
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: "build/Artiva.ipa",
+      skip_waiting_for_build_processing: true,
+    )
+  end
+end
