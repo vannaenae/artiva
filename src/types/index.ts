@@ -52,6 +52,10 @@ export interface Artisan {
   bio: string;
   skills: string[];
   idDocumentUrl?: string;
+  /** Free-text NIN, only used by the optional automated check in
+   * lib/ninVerify.ts. Never required — manual document review (above)
+   * is the verification path that always works. */
+  ninNumber?: string;
   photoUrl: string;
   completedJobsCount: number;
   disputeCount: number;

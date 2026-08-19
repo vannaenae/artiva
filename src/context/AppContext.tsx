@@ -308,6 +308,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       lat: artisanData.lat ?? selectedEstate.lat,
       lng: artisanData.lng ?? selectedEstate.lng,
       address: artisanData.address,
+      ninNumber: artisanData.ninNumber,
       rating: 5.0,
       reviewCount: 0,
       hourlyRate: artisanData.hourlyRate || 8500,

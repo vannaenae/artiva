@@ -3,8 +3,9 @@ import { Artisan } from '../../types';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { ShieldCheck, ShieldAlert, FileText, Check, X, Eye, Phone, MapPin, Calendar } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, FileText, Check, X, Eye, Phone, MapPin, Calendar, Fingerprint, Loader2 } from 'lucide-react';
 import { formatDate } from '../../lib/utils';
+import { isNinVerifyConfigured, verifyNin, NinVerifyResult } from '../../lib/ninVerify';
 
 interface VerificationReviewCardProps {
   artisan: Artisan;
@@ -18,6 +19,16 @@ export const VerificationReviewCard: React.FC<VerificationReviewCardProps> = ({
   const [showDocModal, setShowDocModal] = useState<boolean>(false);
   const [rejectionReason, setRejectionReason] = useState<string>('');
   const [isRejecting, setIsRejecting] = useState<boolean>(false);
+  const [ninResult, setNinResult] = useState<NinVerifyResult | null>(null);
+  const [isCheckingNin, setIsCheckingNin] = useState<boolean>(false);
+
+  const handleCheckNin = async () => {
+    if (!artisan.ninNumber) return;
+    setIsCheckingNin(true);
+    const result = await verifyNin(artisan.ninNumber, artisan.name);
+    setNinResult(result);
+    setIsCheckingNin(false);
+  };
 
   return (
     <Card className="border-l-4 border-l-artiva-gold">
@@ -173,6 +184,42 @@ export const VerificationReviewCard: React.FC<VerificationReviewCardProps> = ({
                 <li>No active unresolved fraud or theft complaints.</li>
               </ul>
             </div>
+
+            {artisan.ninNumber && (
+              <div className="text-xs bg-slate-50 p-3 rounded-artiva border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 text-slate-700 font-semibold">
+                    <Fingerprint className="w-3.5 h-3.5 text-artiva-teal" />
+                    NIN Submitted: {artisan.ninNumber}
+                  </span>
+                  {isNinVerifyConfigured && (
+                    <button
+                      type="button"
+                      onClick={handleCheckNin}
+                      disabled={isCheckingNin}
+                      className="flex items-center gap-1 px-2 py-1 rounded bg-white border border-slate-300 text-slate-700 font-semibold hover:border-artiva-teal disabled:opacity-60"
+                    >
+                      {isCheckingNin ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Fingerprint className="w-3.5 h-3.5" />}
+                      {isCheckingNin ? 'Checking…' : 'Auto-Check NIN'}
+                    </button>
+                  )}
+                </div>
+
+                {!isNinVerifyConfigured && (
+                  <p className="text-slate-500">Automated NIN lookup isn't configured — treat this as a plain text field to cross-check against the uploaded document above.</p>
+                )}
+
+                {ninResult && (
+                  <p className={
+                    ninResult.status === 'match' ? 'text-emerald-700 font-medium'
+                    : ninResult.status === 'mismatch' ? 'text-rose-700 font-medium'
+                    : 'text-amber-700 font-medium'
+                  }>
+                    {ninResult.message} This is advisory only — the decision below is still yours.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" size="sm" onClick={() => setShowDocModal(false)}>

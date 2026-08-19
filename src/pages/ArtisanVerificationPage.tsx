@@ -6,7 +6,7 @@ import { Input, Select } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { geocodeAddress } from '../lib/geocode';
-import { ShieldCheck, Award, Upload, CheckCircle2, MapPin } from 'lucide-react';
+import { ShieldCheck, Award, Upload, CheckCircle2, MapPin, Fingerprint } from 'lucide-react';
 
 export const ArtisanVerificationPage: React.FC = () => {
   const { artisans, signupArtisan, userSession, selectedEstate } = useApp();
@@ -19,6 +19,7 @@ export const ArtisanVerificationPage: React.FC = () => {
   const [bio, setBio] = useState<string>(currentArtisan?.bio || '');
   const [skills, setSkills] = useState<string>('');
   const [address, setAddress] = useState<string>(currentArtisan?.address || '');
+  const [ninNumber, setNinNumber] = useState<string>(currentArtisan?.ninNumber || '');
   const [idPhotoUrl, setIdPhotoUrl] = useState<string>('');
   const [submitted, setSubmitted] = useState<boolean>(currentArtisan?.verificationStatus === 'pending');
   const [isLocating, setIsLocating] = useState<boolean>(false);
@@ -54,6 +55,7 @@ export const ArtisanVerificationPage: React.FC = () => {
       address: address.trim() || undefined,
       lat: coords?.lat,
       lng: coords?.lng,
+      ninNumber: ninNumber.trim() || undefined,
     });
     setSubmitted(true);
   };
@@ -122,6 +124,15 @@ export const ArtisanVerificationPage: React.FC = () => {
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           helperText="Pins your exact location for accurate proximity sorting. Leave blank to use your estate's general location."
+        />
+
+        <Input
+          label="NIN Number (Optional)"
+          icon={<Fingerprint className="w-4 h-4 text-slate-400" />}
+          placeholder="11-digit National Identity Number"
+          value={ninNumber}
+          onChange={(e) => setNinNumber(e.target.value)}
+          helperText="Speeds up admin review. Your uploaded ID document below is what actually gets checked either way."
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
