@@ -1,26 +1,36 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { AppProvider, useApp, RECAPTCHA_CONTAINER_ID } from './context/AppContext';
 import { Navbar } from './components/ui/Navbar';
 import { Footer } from './components/ui/Footer';
 import { RequireAuth } from './components/auth/RequireAuth';
 
 // Pages Inventory
-import { LandingPage } from './pages/LandingPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { ResidentDirectoryPage } from './pages/ResidentDirectoryPage';
-import { ArtisanProfilePage } from './pages/ArtisanProfilePage';
-import { BookingsPage } from './pages/BookingsPage';
-import { BookingDetailPage } from './pages/BookingDetailPage';
-import { ArtisanDashboardPage } from './pages/ArtisanDashboardPage';
-import { ArtisanVerificationPage } from './pages/ArtisanVerificationPage';
-import { AdminVerificationPage } from './pages/AdminVerificationPage';
-import { DisputesPage } from './pages/DisputesPage';
-import { LoginPage } from './pages/LoginPage';
-import { SignupPage } from './pages/SignupPage';
-import { AdminLoginPage } from './pages/AdminLoginPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { TermsPage } from './pages/TermsPage';
-import { PrivacyPage } from './pages/PrivacyPage';
+// Lazy-loaded so each route's code (and any libraries only it needs, e.g.
+// Paystack on the directory page) ships as its own chunk instead of one
+// single bundle everyone downloads on first paint — the bundle had crossed
+// Vite's 500kB warning threshold with everything eager.
+const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const ResidentDirectoryPage = lazy(() => import('./pages/ResidentDirectoryPage').then(m => ({ default: m.ResidentDirectoryPage })));
+const ArtisanProfilePage = lazy(() => import('./pages/ArtisanProfilePage').then(m => ({ default: m.ArtisanProfilePage })));
+const BookingsPage = lazy(() => import('./pages/BookingsPage').then(m => ({ default: m.BookingsPage })));
+const BookingDetailPage = lazy(() => import('./pages/BookingDetailPage').then(m => ({ default: m.BookingDetailPage })));
+const ArtisanDashboardPage = lazy(() => import('./pages/ArtisanDashboardPage').then(m => ({ default: m.ArtisanDashboardPage })));
+const ArtisanVerificationPage = lazy(() => import('./pages/ArtisanVerificationPage').then(m => ({ default: m.ArtisanVerificationPage })));
+const AdminVerificationPage = lazy(() => import('./pages/AdminVerificationPage').then(m => ({ default: m.AdminVerificationPage })));
+const DisputesPage = lazy(() => import('./pages/DisputesPage').then(m => ({ default: m.DisputesPage })));
+const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const SignupPage = lazy(() => import('./pages/SignupPage').then(m => ({ default: m.SignupPage })));
+const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage').then(m => ({ default: m.AdminLoginPage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const TermsPage = lazy(() => import('./pages/TermsPage').then(m => ({ default: m.TermsPage })));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
+
+const RouteFallback: React.FC = () => (
+  <div className="flex items-center justify-center py-24">
+    <div className="w-8 h-8 border-2 border-artiva-teal border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const RouterContent: React.FC = () => {
   const { currentPath, currentRole, userSession } = useApp();
@@ -92,7 +102,9 @@ const RouterContent: React.FC = () => {
       <div>
         <Navbar />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {renderCurrentRoute()}
+          <Suspense fallback={<RouteFallback />}>
+            {renderCurrentRoute()}
+          </Suspense>
         </main>
       </div>
       <Footer />
