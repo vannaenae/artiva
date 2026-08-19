@@ -4,26 +4,35 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { ShieldCheck, Lock, ArrowRight, ShieldAlert, KeyRound } from 'lucide-react';
+import { tryElevateToRealAdmin } from '../lib/adminAuth';
 
-// ponytail: this is a client-bundled passcode, not real authentication — anyone
-// who reads the built JS can find it. It's a speed bump for casual access, not
-// a security boundary. Upgrade to real backend-verified admin auth (Firebase
-// custom claims, a server-checked login) before this handles anything sensitive.
+// ponytail: this client-side comparison is still the primary gate — anyone
+// who reads the built JS can find it, it's a speed bump, not a security
+// boundary. A correct passcode also attempts real backend-verified admin
+// auth (see lib/adminAuth.ts) so Firestore's admin rules start working once
+// the verifyAdminPasscode Cloud Function is deployed — but that upgrade is
+// best-effort and never blocks this working on its own.
 const ADMIN_PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE || 'artiva-admin';
 
 export const AdminLoginPage: React.FC = () => {
   const { navigate, loginWithOtp } = useApp();
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
 
-  const handleAdminAuth = (e: React.FormEvent) => {
+  const handleAdminAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode === ADMIN_PASSCODE) {
-      loginWithOtp('+234 800 999 0000', 'admin');
-      navigate('/admin/verifications');
-    } else {
+    if (passcode !== ADMIN_PASSCODE) {
       setError('Invalid Admin Security Passcode. Access denied.');
+      return;
     }
+
+    setIsVerifying(true);
+    await tryElevateToRealAdmin(passcode);
+    setIsVerifying(false);
+
+    loginWithOtp('+234 800 999 0000', 'admin');
+    navigate('/admin/verifications');
   };
 
   return (
@@ -68,9 +77,10 @@ export const AdminLoginPage: React.FC = () => {
             variant="gold"
             size="lg"
             fullWidth
+            disabled={isVerifying}
             icon={<ShieldCheck className="w-5 h-5 text-slate-900" />}
           >
-            Authenticate Admin Portal
+            {isVerifying ? 'Verifying…' : 'Authenticate Admin Portal'}
           </Button>
 
         </form>
