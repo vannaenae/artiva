@@ -17,6 +17,7 @@
     "rules": "firestore.rules"
   },
   "storage": {
+        "bucket": "artiva-hub.firebasestorage.app",
     "rules": "storage.rules"
   }
 }
