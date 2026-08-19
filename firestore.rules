@@ -59,6 +59,26 @@ service cloud.firestore {
         isAdmin()
       );
       allow delete: if false;
+
+      // bookings/{bookingId}/messages/{messageId} — the chat thread for
+      // this booking. residentId/artisanId are denormalized onto every
+      // message (see lib/firestoreMessages.ts) so this can check "am I a
+      // party to this thread" per-message without a get() on the parent.
+      // Messages are immutable once sent — no update/delete.
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && (
+          resource.data.residentId == request.auth.uid ||
+          resource.data.artisanId == request.auth.uid ||
+          isAdmin()
+        );
+        allow create: if isSignedIn() &&
+          request.resource.data.senderId == request.auth.uid &&
+          (
+            request.resource.data.residentId == request.auth.uid ||
+            request.resource.data.artisanId == request.auth.uid
+          );
+        allow update, delete: if false;
+      }
     }
 
     // disputes/{disputeId} — same access shape as bookings; resolution
