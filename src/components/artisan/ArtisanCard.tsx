@@ -5,7 +5,7 @@ import { Badge } from '../ui/Badge';
 import { RatingStars } from '../ui/RatingStars';
 import { Button } from '../ui/Button';
 import { formatCurrency, formatDistance } from '../../lib/utils';
-import { MapPin, Briefcase, Calendar, ShieldCheck, ArrowRight, Check } from 'lucide-react';
+import { MapPin, Briefcase, Calendar, ShieldCheck, ArrowRight, Check, Heart } from 'lucide-react';
 
 type ArtisanWithDistance = Artisan & { distanceKm: number };
 
@@ -13,15 +13,29 @@ interface ArtisanCardProps {
   artisan: ArtisanWithDistance;
   onSelect: (artisan: ArtisanWithDistance) => void;
   onBook: (artisan: ArtisanWithDistance) => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (artisanId: string) => void;
 }
 
 export const ArtisanCard: React.FC<ArtisanCardProps> = ({
   artisan,
   onSelect,
   onBook,
+  isFavorite = false,
+  onToggleFavorite,
 }) => {
   return (
-    <Card hoverable className="flex flex-col justify-between h-full group hover-lift animate-fade-in">
+    <Card hoverable className="flex flex-col justify-between h-full group hover-lift animate-fade-in relative">
+      {onToggleFavorite && (
+        <button
+          type="button"
+          onClick={() => onToggleFavorite(artisan.id)}
+          aria-label={isFavorite ? 'Remove from favorites' : 'Save to favorites'}
+          className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-white/90 border border-slate-200 hover:border-rose-300 shadow-artiva-sm"
+        >
+          <Heart className={`w-4 h-4 ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} />
+        </button>
+      )}
       <div>
         {/* Header with Photo & Verification Badge */}
         <div className="flex items-start justify-between gap-3 mb-3">

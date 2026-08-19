@@ -87,6 +87,10 @@ interface AppContextType {
   artisans: Artisan[];
   verifyArtisan: (artisanId: string, status: VerificationStatus, rejectionReason?: string) => void;
   setArtisanAvailability: (artisanId: string, unavailableDates: string[]) => void;
+
+  // Resident's saved artisans — id list scoped to whoever's signed in.
+  favoriteArtisanIds: string[];
+  toggleFavoriteArtisan: (artisanId: string) => void;
   
   // Residents List
   residents: Resident[];
@@ -184,6 +188,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : SEED_DISPUTES;
   });
 
+  // Keyed by resident id, so one browser can hold favorites for whoever's
+  // signed in without them bleeding into another account's list.
+  const [favoritesByUser, setFavoritesByUser] = useState<Record<string, string[]>>(() => {
+    const saved = localStorage.getItem('artiva_favorites');
+    return saved ? JSON.parse(saved) : {};
+  });
+
   const [activeCategory, setActiveCategory] = useState<ServiceCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -235,6 +246,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('artiva_disputes', JSON.stringify(disputes));
   }, [disputes]);
+
+  useEffect(() => {
+    localStorage.setItem('artiva_favorites', JSON.stringify(favoritesByUser));
+  }, [favoritesByUser]);
 
   // `uid` is the real Firebase Auth uid from OTP confirmation, when there is
   // one (see confirmLoginOtp below). It becomes the session id in place of a
@@ -494,6 +509,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const setArtisanAvailability = (artisanId: string, unavailableDates: string[]) => {
     setArtisans(prev => prev.map(a => a.id === artisanId ? { ...a, unavailableDates } : a));
+  };
+
+  const favoriteArtisanIds = userSession ? (favoritesByUser[userSession.id] || []) : [];
+
+  const toggleFavoriteArtisan = (artisanId: string) => {
+    if (!userSession) return;
+    setFavoritesByUser(prev => {
+      const current = prev[userSession.id] || [];
+      const next = current.includes(artisanId)
+        ? current.filter(id => id !== artisanId)
+        : [...current, artisanId];
+      return { ...prev, [userSession.id]: next };
+    });
   };
 
   const createBooking = (
@@ -770,6 +798,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       artisans,
       verifyArtisan,
       setArtisanAvailability,
+      favoriteArtisanIds,
+      toggleFavoriteArtisan,
       residents,
       bookings,
       createBooking,

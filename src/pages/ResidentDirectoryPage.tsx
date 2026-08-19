@@ -46,10 +46,13 @@ export const ResidentDirectoryPage: React.FC = () => {
     userLocation,
     locationStatus,
     requestUserLocation,
+    favoriteArtisanIds,
+    toggleFavoriteArtisan,
   } = useApp();
 
   const [onlyVerified, setOnlyVerified] = useState<boolean>(true);
   const [minRating, setMinRating] = useState<number>(0);
+  const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
 
   // Booking Modal State
   const [selectedArtisanForBooking, setSelectedArtisanForBooking] = useState<ArtisanWithDistance | null>(null);
@@ -76,6 +79,9 @@ export const ResidentDirectoryPage: React.FC = () => {
         if (minRating > 0 && artisan.rating < minRating) {
           return false;
         }
+        if (onlyFavorites && !favoriteArtisanIds.includes(artisan.id)) {
+          return false;
+        }
         if (searchQuery.trim() !== '') {
           const q = searchQuery.toLowerCase();
           const matchesName = artisan.name.toLowerCase().includes(q);
@@ -93,7 +99,7 @@ export const ResidentDirectoryPage: React.FC = () => {
         distanceKm: haversineKm(distanceOrigin.lat, distanceOrigin.lng, artisan.lat, artisan.lng),
       }))
       .sort((a, b) => a.distanceKm - b.distanceKm);
-  }, [artisans, activeCategory, onlyVerified, minRating, searchQuery, distanceOrigin]);
+  }, [artisans, activeCategory, onlyVerified, minRating, onlyFavorites, favoriteArtisanIds, searchQuery, distanceOrigin]);
 
   const [paymentError, setPaymentError] = useState<string>('');
   const [isPaying, setIsPaying] = useState<boolean>(false);
@@ -217,6 +223,8 @@ export const ResidentDirectoryPage: React.FC = () => {
           setOnlyVerified={setOnlyVerified}
           minRating={minRating}
           setMinRating={setMinRating}
+          onlyFavorites={onlyFavorites}
+          setOnlyFavorites={setOnlyFavorites}
         />
       </div>
 
@@ -229,6 +237,8 @@ export const ResidentDirectoryPage: React.FC = () => {
               artisan={artisan}
               onSelect={(art) => navigate(`/artisan/${art.id}`)}
               onBook={handleOpenBookingModal}
+              isFavorite={favoriteArtisanIds.includes(artisan.id)}
+              onToggleFavorite={userSession ? toggleFavoriteArtisan : undefined}
             />
           ))}
         </div>
