@@ -16,6 +16,10 @@
   "firestore": {
     "rules": "firestore.rules"
   },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs20"
+  },
   "storage": {
         "bucket": "artiva-hub.firebasestorage.app",
     "rules": "storage.rules"
